@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PTCHU · Entradas · Supabase</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f5f7;margin:0;padding:12px;color:#111}
+.card{max-width:1000px;margin:auto;background:#fff;padding:14px;border-radius:18px}
+h1{text-align:center;font-size:23px}
+.selector,.top{text-align:center;margin:12px}
+select,input,button{font:inherit}
+select,input{padding:9px;border:1px solid #ccc;border-radius:9px}
+button{padding:9px 12px;border:0;border-radius:9px;margin:3px}
+.add{background:#087fff;color:#fff}.save{background:#34c759;color:#fff}.cancel{background:#ddd}
+.edit{background:#eee}.del{background:#ff3b30;color:#fff}
+.form{background:#f5f5f7;padding:12px;border-radius:14px}
+.grid{display:grid;grid-template-columns:1fr 1.6fr .8fr 1.1fr;gap:8px}
+.grid label{font-size:12px;font-weight:bold}
+.grid input,.grid select{width:100%;margin-top:4px;box-sizing:border-box}
+.table{overflow-x:auto;margin-top:14px}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th,td{border-bottom:1px solid #ddd;padding:9px 5px;text-align:center;overflow-wrap:break-word}
+th{font-weight:bold}
+.empty{text-align:center;color:#777;padding:22px}
+.note{text-align:center;color:#666;font-size:12px;margin-top:10px}
+.status{text-align:center;margin:8px 0;font-size:13px;color:#666}
+.status.ok{color:#198754;font-weight:600}.status.err{color:#c62828;font-weight:600}
+.login{max-width:420px;margin:30px auto;background:#fff;padding:20px;border-radius:18px}
+.login input{width:100%;box-sizing:border-box;margin:6px 0}
+.login button{width:100%;margin-top:8px}
+.hidden{display:none}
+@media(max-width:650px){
+.grid{grid-template-columns:1fr 1.5fr}
+th,td{font-size:13px;padding:7px 3px}
+}
+</style>
+</head>
+<body>
+
+<div id="loginBox" class="login hidden">
+<h1>🎟️ PTCHU · ENTRADAS</h1>
+<p style="text-align:center">Inicia sesión para usar las Entradas sincronizadas con Supabase.</p>
+<input id="email" type="email" placeholder="Correo electrónico">
+<input id="password" type="password" placeholder="Contraseña">
+<button class="add" onclick="login()">Iniciar sesión</button>
+<div id="loginMsg" class="status"></div>
+</div>
+
+<div id="app" class="card hidden">
+<h1>🎟️ PTCHU · ENTRADAS</h1>
+<div id="userEmail" class="status"></div>
+<div id="cloudStatus" class="status">Conectando con Supabase…</div>
+
+<div class="selector">
+<select id="filter">
+<option value="ALL">🌍 Todas las ciudades</option>
+<option>🇵🇹 Lisboa</option><option>🇪🇸 Madrid</option><option>🇮🇹 Roma</option>
+<option>🇹🇷 Estambul</option><option>🇬🇷 Grecia</option><option>🇫🇷 París</option><option>🇨🇿 Praga</option>
+</select>
+</div>
+
+<div class="top"><button class="add" onclick="openForm()">＋ Agregar</button></div>
+
+<div id="form" class="form" hidden>
+<div class="grid">
+<label>Ciudad
+<select id="city">
+<option>🇵🇹 Lisboa</option><option>🇪🇸 Madrid</option><option>🇮🇹 Roma</option>
+<option>🇹🇷 Estambul</option><option>🇬🇷 Grecia</option><option>🇫🇷 París</option><option>🇨🇿 Praga</option>
+</select>
+</label>
+<label>Atracción / POI<input id="poi" placeholder="Ej. Torre de Belém"></label>
+<label>Precio $<input id="price" type="number" step="0.01" min="0"></label>
+<label>Horario<input id="time" placeholder="08:00–18:00"></label>
+</div>
+<div style="text-align:center">
+<button class="save" onclick="saveEntry()">Guardar</button>
+<button class="cancel" onclick="closeForm()">Cancelar</button>
+</div>
+</div>
+
+<div class="table">
+<table>
+<thead><tr><th>Ciudad</th><th>Atracción / POI</th><th>Precio $</th><th>Horario</th><th>Acciones</th></tr></thead>
+<tbody id="body"></tbody>
+</table>
+</div>
+<div class="note">Versión de prueba conectada a Supabase. No modifica el index.html estable.</div>
+</div>
+
+<script>
+const SUPABASE_URL='https://usqqsseoqdxqqapbtqsi.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_VG4BsTNtQbJu-ER89xLUJQ_7INq5RFL';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+
+let data=[],editId=null,currentUser=null,channel=null;
+
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+function status(t,ok=false,err=false){
+ const e=document.getElementById('cloudStatus'); if(!e)return;
+ e.textContent=t; e.className='status'+(ok?' ok':'')+(err?' err':'');
+}
+function render(){
+ const f=document.getElementById('filter').value;
+ const r=data.filter(x=>f==='ALL'||x.city===f);
+ document.getElementById('body').innerHTML=r.length?r.map(x=>`
+ <tr>
+  <td>${esc(x.city)}</td><td>${esc(x.poi)}</td>
+  <td>$${Number(x.price||0).toFixed(2)}</td><td>${esc(x.time||'')}</td>
+  <td><button class="edit" onclick="openForm('${x.id}')">✏️</button>
+      <button class="del" onclick="deleteEntry('${x.id}')">🗑️</button></td>
+ </tr>`).join(""):'<tr><td colspan="5" class="empty">No hay entradas registradas.</td></tr>';
+}
+function openForm(id=null){
+ editId=id;
+ document.getElementById('form').hidden=false;
+ if(!id){city.value='🇵🇹 Lisboa';poi.value='';price.value='';time.value=''}
+ else{
+  const x=data.find(v=>String(v.id)===String(id));
+  if(!x)return;
+  city.value=x.city;poi.value=x.poi;price.value=x.price??'';time.value=x.time??'';
+ }
+ document.getElementById('poi').focus();
+}
+function closeForm(){editId=null;document.getElementById('form').hidden=true}
+async function loadEntries(){
+ status('Cargando Entradas desde Supabase…');
+ const {data:rows,error}=await sb.from('entries').select('*').order('created_at',{ascending:true});
+ if(error){status('Error de base de datos: '+error.message,false,true);return}
+ data=rows||[];render();status('Entradas sincronizadas con Supabase',true);
+}
+async function saveEntry(){
+ if(!poi.value.trim()){alert('Escribe la Atracción / POI.');return}
+ if(!currentUser){alert('No hay una sesión activa.');return}
+ const obj={city:city.value,poi:poi.value.trim(),price:Number(price.value||0),time:time.value.trim()};
+ let result;
+ if(editId){
+  result=await sb.from('entries').update(obj).eq('id',editId).eq('user_id',currentUser.id);
+ }else{
+  obj.user_id=currentUser.id;
+  result=await sb.from('entries').insert(obj);
+ }
+ if(result.error){alert('No se pudo guardar: '+result.error.message);return}
+ closeForm();await loadEntries();
+}
+async function deleteEntry(id){
+ if(!confirm('¿Eliminar esta entrada?'))return;
+ const {error}=await sb.from('entries').delete().eq('id',id);
+ if(error){alert('No se pudo eliminar: '+error.message);return}
+ await loadEntries();
+}
+async function login(){
+ const email=document.getElementById('email').value.trim();
+ const password=document.getElementById('password').value;
+ const msg=document.getElementById('loginMsg');
+ if(!email||!password){msg.textContent='Escribe correo y contraseña.';return}
+ msg.textContent='Iniciando sesión…';
+ const {data,error}=await sb.auth.signInWithPassword({email,password});
+ if(error){msg.textContent='No se pudo iniciar sesión: '+error.message;return}
+ await initUser(data.user);
+}
+async function initUser(user){
+ currentUser=user;
+ document.getElementById('loginBox').classList.add('hidden');
+ document.getElementById('app').classList.remove('hidden');
+ document.getElementById('userEmail').textContent='Usuario: '+(user.email||'');
+ await loadEntries();
+ if(channel)await sb.removeChannel(channel);
+ channel=sb.channel('entries-sync').on('postgres_changes',
+  {event:'*',schema:'public',table:'entries',filter:'user_id=eq.'+user.id},
+  ()=>loadEntries()
+ ).subscribe();
+}
+async function init(){
+ const {data:{user}}=await sb.auth.getUser();
+ if(user) await initUser(user);
+ else document.getElementById('loginBox').classList.remove('hidden');
+}
+document.getElementById('filter').onchange=render;
+init();
+</script>
+</body>
+</html>
