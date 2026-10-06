@@ -1,0 +1,23 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PTCHU · Entradas · Prueba</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f5f7;margin:0;padding:12px;color:#111}.card{max-width:1000px;margin:auto;background:#fff;padding:14px;border-radius:18px}h1{text-align:center;font-size:23px}.selector,.top{text-align:center;margin:12px}select,input,button{font:inherit}select,input{padding:9px;border:1px solid #ccc;border-radius:9px}button{padding:9px 12px;border:0;border-radius:9px;margin:3px}.add{background:#087fff;color:#fff}.save{background:#34c759;color:#fff}.cancel{background:#ddd}.edit{background:#eee}.del{background:#ff3b30;color:#fff}.form{background:#f5f5f7;padding:12px;border-radius:14px}.grid{display:grid;grid-template-columns:1fr 1.6fr .8fr 1.1fr;gap:8px}.grid label{font-size:12px;font-weight:bold}.grid input,.grid select{width:100%;margin-top:4px;box-sizing:border-box}.table{overflow-x:auto;margin-top:14px}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border-bottom:1px solid #ddd;padding:9px 5px;text-align:center;overflow-wrap:break-word}th{font-weight:bold}.empty{text-align:center;color:#777;padding:22px}.note{text-align:center;color:#666;font-size:12px;margin-top:10px}@media(max-width:650px){.grid{grid-template-columns:1fr 1.5fr}.grid label:nth-child(3),.grid label:nth-child(4){grid-column:auto}th,td{font-size:13px;padding:7px 3px}}
+</style></head><body><div class="card">
+<h1>🎟️ PTCHU · ENTRADAS</h1>
+<div class="selector"><select id="filter"><option value="ALL">🌍 Todas las ciudades</option><option>🇵🇹 Lisboa</option><option>🇪🇸 Madrid</option><option>🇮🇹 Roma</option><option>🇹🇷 Estambul</option><option>🇬🇷 Grecia</option><option>🇫🇷 París</option><option>🇨🇿 Praga</option></select></div>
+<div class="top"><button class="add" onclick="openForm()">＋ Agregar</button></div>
+<div id="form" class="form" hidden><div class="grid">
+<label>Ciudad<select id="city"><option>🇵🇹 Lisboa</option><option>🇪🇸 Madrid</option><option>🇮🇹 Roma</option><option>🇹🇷 Estambul</option><option>🇬🇷 Grecia</option><option>🇫🇷 París</option><option>🇨🇿 Praga</option></select></label>
+<label>Atracción / POI<input id="poi" placeholder="Ej. Torre de Belém"></label><label>Precio $<input id="price" type="number" step="0.01"></label><label>Horario<input id="time" placeholder="08:00–18:00"></label></div>
+<div style="text-align:center"><button class="save" onclick="save()">Guardar</button><button class="cancel" onclick="closeForm()">Cancelar</button></div></div>
+<div class="table"><table><thead><tr><th>Ciudad</th><th>Atracción / POI</th><th>Precio $</th><th>Horario</th><th>Acciones</th></tr></thead><tbody id="body"></tbody></table></div>
+<div class="note">PRUEBA: funciona con JavaScript y guarda los datos en este dispositivo. No modifica la versión estable.</div></div>
+<script>
+const K="ptchu_entradas_test_v1";let data=JSON.parse(localStorage.getItem(K)||"[]"),edit=-1;
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+function render(){let f=document.getElementById("filter").value,r=data.map((x,i)=>[x,i]).filter(a=>f=="ALL"||a[0].city==f);document.getElementById("body").innerHTML=r.length?r.map(a=>`<tr><td>${esc(a[0].city)}</td><td>${esc(a[0].poi)}</td><td>$${Number(a[0].price||0).toFixed(2)}</td><td>${esc(a[0].time)}</td><td><button class="edit" onclick="openForm(${a[1]})">✏️</button><button class="del" onclick="del(${a[1]})">🗑️</button></td></tr>`).join(""):'<tr><td colspan="5" class="empty">No hay entradas registradas.</td></tr>'}
+function openForm(i=-1){edit=i;form.hidden=false;if(i<0){city.value="🇵🇹 Lisboa";poi.value="";price.value="";time.value=""}else{let x=data[i];city.value=x.city;poi.value=x.poi;price.value=x.price;time.value=x.time}poi.focus()}
+function closeForm(){edit=-1;form.hidden=true}
+function save(){if(!poi.value.trim()){alert("Escribe la Atracción / POI.");return}let x={city:city.value,poi:poi.value.trim(),price:price.value||"0",time:time.value.trim()};if(edit<0)data.push(x);else data[edit]=x;localStorage.setItem(K,JSON.stringify(data));closeForm();render()}
+function del(i){if(confirm("¿Eliminar esta entrada?")){data.splice(i,1);localStorage.setItem(K,JSON.stringify(data));render()}}
+filter.onchange=render;render();
+</script></body></html>
