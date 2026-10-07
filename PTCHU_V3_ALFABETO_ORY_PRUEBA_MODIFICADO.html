@@ -549,3 +549,4 @@ document.getElementById('entriesTbody').onclick=e=>{
 };
 sb.auth.getSession().then(({data})=>{if(data.session?.user)initUser(data.session.user);else showLogin('')}).catch(e=>showLogin('No se pudo conectar con Supabase: '+(e.message||e)));document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!document.getElementById('app').classList.contains('hidden')){loadFlights();loadHotels();loadEntries()}});
 </script></body></html>
+<!-- PTCHU Pages refresh 2026-10-07 -->
