@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PTCHU · Diagnóstico Entradas</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;margin:0;background:#f5f6f8;color:#111}
+main{max-width:900px;margin:auto;padding:20px}
+h1{font-size:24px;margin:0 0 12px}
+.card{background:#fff;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 1px 5px #0001}
+.status{padding:10px;border-radius:10px;background:#eee;margin:8px 0;font-weight:600}
+.ok{background:#dff7e8;color:#146b35}.bad{background:#ffe1e1;color:#9b2226}.wait{background:#fff0c7;color:#7a5600}
+button{border:0;border-radius:10px;padding:11px 15px;font-size:16px;margin:4px 4px 4px 0}
+input{padding:11px;border:1px solid #ccc;border-radius:9px;width:100%;box-sizing:border-box;margin:5px 0 10px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:8px;border-bottom:1px solid #ddd}
+.small{font-size:13px;color:#555;word-break:break-all}
+</style>
+</head>
+<body>
+<main>
+<h1>🎟️ PTCHU · Diagnóstico Entradas</h1>
+<div id="auth" class="card">
+  <b>Acceso</b>
+  <input id="email" type="email" placeholder="Correo">
+  <input id="password" type="password" placeholder="Contraseña">
+  <button onclick="login()">Iniciar sesión</button>
+</div>
+
+<div id="app" style="display:none">
+  <div class="card">
+    <div><b>Usuario:</b> <span id="userEmail"></span></div>
+    <div class="small"><b>User ID:</b> <span id="userId"></span></div>
+    <div id="rt" class="status wait">Realtime: comprobando...</div>
+    <button onclick="loadData()">🔄 Leer Supabase ahora</button>
+  </div>
+
+  <div class="card">
+    <b>Lectura de public.entries</b>
+    <div id="counts" class="status wait">Leyendo...</div>
+    <div style="overflow:auto">
+      <table>
+        <thead><tr><th>ID</th><th>Ciudad</th><th>POI</th><th>Precio</th><th>Hora</th><th>Usuario</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <b>Último evento Realtime</b>
+    <div id="event" class="small">Esperando un INSERT / UPDATE / DELETE…</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://usqqsseoqdxqqapbtqsi.supabase.co';
+const SUPABASE_KEY='sb_publishable_VG4BsTNtQbJu-ER89xLUJQ_7INq5RFL';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let channel=null;
+
+function msg(id,text,cls=''){const e=document.getElementById(id);e.textContent=text;e.className='status '+cls}
+async function login(){
+ const email=document.getElementById('email').value.trim();
+ const password=document.getElementById('password').value;
+ const {data,error}=await sb.auth.signInWithPassword({email,password});
+ if(error){alert('Error: '+error.message);return}
+ await init(data.user);
+}
+async function init(user){
+ document.getElementById('auth').style.display='none';
+ document.getElementById('app').style.display='block';
+ document.getElementById('userEmail').textContent=user.email||'';
+ document.getElementById('userId').textContent=user.id;
+ await loadData();
+ if(channel) await sb.removeChannel(channel);
+ channel=sb.channel('entries-diagnostic-'+user.id)
+   .on('postgres_changes',{event:'*',schema:'public',table:'entries'},payload=>{
+      document.getElementById('event').textContent=
+       new Date().toLocaleTimeString()+' · '+payload.eventType+
+       ' · '+(payload.new?.poi||payload.old?.poi||'');
+      loadData();
+   })
+   .subscribe(status=>{
+      const el=document.getElementById('rt');
+      if(status==='SUBSCRIBED'){msg('rt','Realtime: CONECTADO ✓','ok')}
+      else if(status==='CHANNEL_ERROR'){msg('rt','Realtime: ERROR DE CANAL','bad')}
+      else if(status==='TIMED_OUT'){msg('rt','Realtime: TIMEOUT','bad')}
+      else {msg('rt','Realtime: '+status,'wait')}
+   });
+}
+async function loadData(){
+ const {data,error}=await sb.from('entries').select('*').order('created_at',{ascending:false});
+ if(error){msg('counts','Error leyendo entries: '+error.message,'bad');return}
+ const {data:userData}=await sb.auth.getUser();
+ const uid=userData?.user?.id||'';
+ const own=(data||[]).filter(x=>x.user_id===uid);
+ msg('counts','Supabase tiene '+(data||[]).length+' entradas visibles. Para este usuario: '+own.length,'ok');
+ document.getElementById('rows').innerHTML=(data||[]).map(x=>
+  '<tr><td>'+x.id+'</td><td>'+esc(x.city)+'</td><td>'+esc(x.poi)+'</td><td>$'+Number(x.price||0).toFixed(2)+'</td><td>'+esc(x.time||'')+'</td><td class="small">'+esc(x.user_id)+'</td></tr>'
+ ).join('');
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+sb.auth.getSession().then(async ({data})=>{if(data.session) await init(data.session.user)});
+</script>
+</main>
+</body>
+</html>
