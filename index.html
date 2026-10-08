@@ -1,0 +1,411 @@
+<!-- PTCHU: VUELOS DEFINIDO + HOTELES CHIN/CHOUT + SINCRONIZACION -->
+<!-- PTCHU FINAL DATE FIX 2026-10-04 -->
+<!-- PTCHU ENTRADAS V3: ciudades y atracciones ordenadas alfabéticamente -->
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="PTCHU"><link rel="apple-touch-icon" href="./apple-touch-icon.png"><link rel="manifest" href="./manifest.webmanifest"><title>PTCHU · Europa 2027 · V12 UNIFICADO</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>
+*{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 13px;font-weight:700}.primary{background:#2563eb;color:#fff}.light{background:#e2e8f0;color:#334155}.dark{background:#0f172a;color:#fff}.hidden{display:none!important}#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}.loginbox,.card,.modalbox{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 20px #00000012}.loginbox{width:min(480px,100%)}.loginbox h1{margin:0 0 8px}.loginbox p,.muted,.note{color:#64748b;font-size:14px}.loginbox label{display:block;margin-top:12px;font-size:12px;font-weight:800}.loginbox input,.grid input{width:100%;padding:10px;margin-top:4px;border:1px solid #cbd5e1;border-radius:9px;font-size:15px}.login-actions,.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.note{margin-top:12px;line-height:1.45}header{background:#0f172a;color:#fff;padding:16px;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:21px}header p{margin:4px 0;color:#cbd5e1;font-size:13px}.userline{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:12px;color:#cbd5e1}.userline button{padding:6px 9px;background:#334155;color:#fff}.status{display:inline-block;margin-top:8px;padding:5px 9px;border-radius:999px;font-size:12px;background:#334155}.status.ok{background:#166534}.status.err{background:#991b1b}nav{display:flex;overflow:auto;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:82px;z-index:4}nav button{background:#fff;color:#64748b;white-space:nowrap}nav button.active{color:#2563eb;border-bottom:3px solid #2563eb}main{padding:14px;max-width:1500px;margin:auto}.screen{display:none}.screen.active{display:block}.card{margin-bottom:14px}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.kpi{background:#f8fafc;border-radius:10px;padding:12px}.kpi b{font-size:22px;display:block}.tablewrap{overflow:auto;border-radius:12px}table{border-collapse:collapse;min-width:1120px;width:100%}th,td{padding:10px 8px;text-align:center;border:2px solid white;font-size:13px}th{font-size:12px}.actions{background:#f8fafc!important;min-width:92px}.small{padding:7px 8px;margin:2px}.edit{background:#dbeafe}.delete{background:#fee2e2}.empty{text-align:center;color:#64748b;padding:25px}.back{margin-bottom:12px}.modal{display:none;position:fixed;inset:0;background:#0009;z-index:20;padding:14px;align-items:center;justify-content:center}.modal.open{display:flex}.modalbox{width:min(680px,100%);max-height:92vh;overflow:auto}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}@media(max-width:650px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+</style>
+<style id="ptchu-hotel-columns-v3">
+#hotelTable{min-width:1120px;width:100%;table-layout:fixed}
+#hotelTable th,#hotelTable td{white-space:normal;overflow-wrap:normal;word-break:normal}
+#hotelTable th{font-weight:800}
+#hotelTable th:nth-child(1),#hotelTable td:nth-child(1){width:95px}
+#hotelTable th:nth-child(2),#hotelTable td:nth-child(2){width:170px}
+#hotelTable th:nth-child(3),#hotelTable td:nth-child(3){width:220px}
+#hotelTable th:nth-child(4),#hotelTable td:nth-child(4),
+#hotelTable th:nth-child(5),#hotelTable td:nth-child(5){
+  width:105px;min-width:105px;white-space:nowrap !important;
+  overflow-wrap:normal !important;word-break:normal !important;
+  text-align:center;
+}
+#hotelTable th:nth-child(6),#hotelTable td:nth-child(6){width:82px;text-align:center}
+#hotelTable th:nth-child(7),#hotelTable td:nth-child(7){width:78px;text-align:center}
+#hotelTable th:nth-child(8),#hotelTable td:nth-child(8){width:105px}
+#hotelTable th:nth-child(9),#hotelTable td:nth-child(9){width:92px;text-align:center;white-space:nowrap}
+</style>
+
+<script id="ptchu-country-flags">
+function countryFlag(code){
+  const c=(code||'').toUpperCase();
+  const m={
+    GUA:'🇬🇹', GUATEMALA:'🇬🇹',
+    IAD:'🇺🇸', LGA:'🇺🇸', JFK:'🇺🇸', 'NEW YORK':'🇺🇸',
+    LHR:'🇬🇧', LIS:'🇵🇹', MAD:'🇪🇸', FCO:'🇮🇹',
+    IST:'🇹🇷', ATH:'🇬🇷', CDG:'🇫🇷', PRG:'🇨🇿'
+  };
+  return m[c]||'';
+}
+function flagAirport(code){
+  return countryFlag(code)+' '+code;
+}
+</script>
+
+
+<style id="ptchu-hotels-final-css">
+.hotels-table th,.hotels-table td{overflow-wrap:normal;word-break:normal;hyphens:none;white-space:normal}
+.hotels-table .hotel-actions{white-space:nowrap;text-align:center}
+.hotels-table .hotel-nights,.hotels-table .hotel-total,.hotels-table .hotel-date{text-align:center}
+.hotels-table .hotel-city{white-space:nowrap}
+</style>
+
+
+<style id="ptchu-hotel-dates-v2">
+.hotels-table .hotel-date,
+.hotels-table .hotel-date input,
+.hotels-table td:nth-child(4),
+.hotels-table td:nth-child(5),
+.hotels-table th:nth-child(4),
+.hotels-table th:nth-child(5){
+  white-space:nowrap !important;
+  overflow-wrap:normal !important;
+  word-break:normal !important;
+}
+</style>
+
+
+<script id="ptchu-hotels-cloud-v2">
+window.PTCHU_HOTELS_CLOUD = {
+  enabled: true,
+  table: "hotels",
+  note: "Hotels require a public.hotels table and RLS policies in Supabase."
+};
+</script>
+
+
+<script id="ptchu-hotels-supabase-schema">
+/*
+ PTCHU HOTELES - SUPABASE SETUP
+ Ejecutar una sola vez en Supabase SQL Editor:
+
+ create table if not exists public.hotels (
+   id bigint generated by default as identity primary key,
+   user_id uuid not null references auth.users(id) on delete cascade,
+   city text not null,
+   hotel text not null,
+   address text,
+   check_in date not null,
+   check_out date not null,
+   nights integer not null default 0,
+   total numeric,
+   payment_status text,
+   created_at timestamptz not null default now()
+ );
+
+ alter table public.hotels enable row level security;
+
+ create policy "users can select their own hotels"
+ on public.hotels for select to authenticated
+ using (auth.uid() = user_id);
+
+ create policy "users can insert their own hotels"
+ on public.hotels for insert to authenticated
+ with check (auth.uid() = user_id);
+
+ create policy "users can update their own hotels"
+ on public.hotels for update to authenticated
+ using (auth.uid() = user_id)
+ with check (auth.uid() = user_id);
+
+ create policy "users can delete their own hotels"
+ on public.hotels for delete to authenticated
+ using (auth.uid() = user_id);
+
+ grant usage on schema public to authenticated;
+ grant select, insert, update, delete on table public.hotels to authenticated;
+ grant usage, select on sequence public.hotels_id_seq to authenticated;
+*/
+window.PTCHU_HOTELS_CLOUD_SETUP = {
+  table: "hotels",
+  fields: ["city","hotel","address","check_in","check_out","nights","total","payment_status"],
+  syncReadyAfterSql: true
+};
+</script>
+
+</head><body>
+<div id="login"><div class="loginbox"><h1>PTCHU · EUROPA 2027</h1><p>Inicia sesión para que tus vuelos se guarden en la nube y aparezcan en tus otros dispositivos.</p><label>Correo electrónico<input id="email" type="email" autocomplete="email" placeholder="tu correo"></label><label>Contraseña<input id="password" type="password" autocomplete="current-password" placeholder="mínimo 6 caracteres"></label><div class="login-actions"><button class="primary" id="loginBtn">Iniciar sesión</button><button class="light" id="signupBtn">Crear cuenta</button></div><div id="loginMsg" class="note"></div></div></div>
+<div id="app" class="hidden"><header><h1>PTCHU · EUROPA 2027</h1><p>10–27 marzo 2027 · 2 pasajeros · Carry-on</p><div class="userline"><span id="userEmail"></span><button id="logout">Cerrar sesión</button></div><span id="cloudStatus" class="status">Conectando...</span></header>
+<nav><button class="tab active" data-screen="vuelos">✈️ Vuelos</button><button class="tab" data-screen="hoteles">🏨 Hoteles</button><button class="tab" data-screen="trenes">🚆 Trenes</button><button class="tab" data-screen="transporte">🚇 Transporte</button><button class="tab" data-screen="entradas">🎟️ Entradas</button><button class="tab" data-screen="gastos">💶 Gastos</button></nav>
+<main><section id="vuelos" class="screen active"><div class="card"><h2>Matriz de vuelos</h2><div class="muted">Los cambios se guardan en Supabase y se sincronizan entre dispositivos.</div><div class="kpis"><div class="kpi"><span class="muted">Vuelos</span><b id="count">0</b></div><div class="kpi"><span class="muted">Primer vuelo</span><b>08/03</b></div><div class="kpi"><span class="muted">Último tramo</span><b id="lastLeg">—</b></div></div><div class="toolbar"><button class="primary" id="add">＋ Agregar vuelo</button><button class="dark" id="save">☁️ Sincronizar</button><button class="light" id="reset">↺ Restaurar matriz</button></div><div class="tablewrap"><table><thead><tr><th style="background:#dbeafe">Fecha</th><th style="background:#dcfce7">Aerolínea</th><th style="background:#fef3c7">Reservación</th><th style="background:#ffedd5">Origen</th><th style="background:#fee2e2">Hora</th><th style="background:#ede9fe">Destino</th><th style="background:#f3e8d3">Hora</th><th style="background:#e5e7eb"># Vuelo</th><th class="actions">Acciones</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
+
+<section id="hoteles" class="screen">
+  <div class="card">
+    <h2>Matriz de hoteles</h2>
+    <div class="muted">Los datos de hoteles se ingresarán después de creada la matriz.</div>
+    <div class="toolbar">
+      <button class="primary" id="addHotel">＋ Agregar hotel</button>
+      <button class="dark" id="syncHotels">☁️ Sincronizar</button>
+    </div>
+    <div class="tablewrap">
+      <table id="hotelTable">
+        <thead><tr>
+          <th style="background:#dbeafe"><b>Ciudad</b></th>
+          <th style="background:#dcfce7"><b>Hotel</b></th>
+          <th style="background:#fef3c7"><b>Dirección</b></th>
+          <th style="background:#ffedd5"><b>ChIn</b></th>
+          <th style="background:#fee2e2"><b>ChOut</b></th>
+          <th style="background:#ede9fe"><b>No. Noches</b></th>
+          <th style="background:#f3e8d3"><b>Total $</b></th>
+          <th style="background:#e5e7eb"><b>Status Pago</b></th>
+          <th class="actions"><b>Acciones</b></th>
+        </tr></thead>
+        <tbody id="hotelTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section><section id="trenes" class="screen"><div class="card"><h2>Trenes</h2><div class="empty">Módulo preparado para agregar información de trenes.</div></div></section><section id="transporte" class="screen"><div class="card"><h2>Transporte</h2><div class="empty">Módulo preparado para agregar información de transporte.</div></div></section><section id="entradas" class="screen">
+  <div id="citiesScreen" class="card">
+    <h2>🎟️ PTCHU · Entradas</h2>
+    <div class="muted">Ciudades únicas. Abre una ciudad para ver <b>todos</b> sus POI, ordenados alfabéticamente.</div>
+    <div class="toolbar">
+      <button class="primary" id="addCity">＋ Agregar ciudad</button>
+      <button class="dark" id="syncEntries">☁️ Sincronizar</button>
+    </div>
+    <div class="tablewrap">
+      <table style="min-width:620px">
+        <thead><tr><th>Ciudad</th><th class="actions">Acciones</th></tr></thead>
+        <tbody id="citiesTbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div id="poiScreen" class="card hidden">
+    <button class="light back" id="backCities">← Volver a ciudades</button>
+    <h2 id="poiTitle">POI</h2>
+    <div class="muted">Se muestran todos los POI asignados a esta ciudad, ordenados alfabéticamente.</div>
+    <div class="toolbar"><button class="primary" id="addPoi">＋ Agregar POI</button></div>
+    <div class="tablewrap">
+      <table style="min-width:720px">
+        <thead><tr><th>Ciudad</th><th>Atracción / POI</th><th>Precio $</th><th>Horario</th><th class="actions">Acciones</th></tr></thead>
+        <tbody id="poiTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section><section id="gastos" class="screen"><div class="card"><h2>Gastos</h2><div class="empty">Módulo preparado para agregar información de gastos.</div></div></section></main></div>
+
+<div id="hotelModal" class="modal">
+  <div class="modalbox">
+    <h2 id="hotelMtitle">Agregar hotel</h2>
+    <div class="grid" id="hotelFields"></div>
+    <div class="modal-actions">
+      <button class="light" id="hotelCancel">Cancelar</button>
+      <button class="primary" id="hotelConfirm">Guardar hotel</button>
+    </div>
+  </div>
+</div>
+<div id="entryPoiModal" class="modal">
+  <div class="modalbox">
+    <h2 id="entryPoiModalTitle">Agregar POI</h2>
+    <div class="grid" id="entryPoiFields"></div>
+    <div class="modal-actions">
+      <button class="light" id="entryPoiCancel">Cancelar</button>
+      <button class="primary" id="entryPoiConfirm">Guardar</button>
+    </div>
+  </div>
+</div>
+<div id="modal" class="modal"><div class="modalbox"><h2 id="mtitle">Vuelo</h2><div class="grid" id="fields"></div><div class="modal-actions"><button class="light" id="cancel">Cancelar</button><button class="primary" id="confirm">Guardar vuelo</button></div></div></div>
+<script>
+const SUPABASE_URL='https://usqqsseoqdxqqapbtqsi.supabase.co';const SUPABASE_PUBLISHABLE_KEY='sb_publishable_VG4BsTNtQbJu-ER89xLUJQ_7INq5RFL';const sb=supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+const H=['Fecha','Aerolínea','Reservación','Origen','Hora','Destino','Hora','# Vuelo'];const INITIAL=[['08/03/27','United','E4FHZB / HGNKRB','GUA','01:05/12:35','IAD/LGA','13:49','UA1572 / UA3698'],['09/03/27','JetBlue/British Airways','NTMCGA / BKXNJK','JFK','09:14/11:50','LHR/LIS','14:50','B6007/B66300'],['12/03/27','TAP Air Portugal','X8OZ7G','LIS','11:45','MAD','14:05','TP1014'],['15/03/27','ITA Airways','CSV4CI','MAD','11:40','FCO','14:00','AZ061'],['17/03/27','Turkish Airlines','TWBHGL / T6JGFN','FCO','11:15','IST','15:55','TK1862'],['19/03/27','Aegean','Z4ULPB / Z52U3R','IST','22:00','ATH','22:30','A3995'],['21/03/27','Aegean','Y7RYML','ATH','13:20','CDG','15:55','A3612'],['23/03/27','','','CDG','','PRG','',''],['26/03/27','','','PRG','','NEW YORK','',''],['27/03/27','','','','','','','']];
+let rows=[],editId=null,channel=null,entryChannel=null;const colors=['#dbeafe','#dcfce7','#fef3c7','#ffedd5','#fee2e2','#ede9fe','#f3e8d3','#e5e7eb'];
+function status(t,ok=false,err=false){const e=document.getElementById('cloudStatus');e.textContent=t;e.className='status'+(ok?' ok':'')+(err?' err':'')}function showLogin(msg=''){document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');document.getElementById('loginMsg').textContent=msg}
+function toDbDate(v){if(!v)return null;const m=v.match(/^(\d{2})\/(\d{2})\/(\d{2})$/);if(m)return '20'+m[3]+'-'+m[2]+'-'+m[1];return v}function displayDate(v){if(!v)return '';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1].slice(2):v}const AIRPORT_FLAGS={GUA:'🇬🇹',IAD:'🇺🇸',LGA:'🇺🇸',JFK:'🇺🇸',LHR:'🇬🇧',LIS:'🇵🇹',MAD:'🇪🇸',FCO:'🇮🇹',IST:'🇹🇷',ATH:'🇬🇷',CDG:'🇫🇷',PRG:'🇨🇿','NEW YORK':'🇺🇸'};const CITY_FLAGS={'lisboa':'🇵🇹','madrid':'🇪🇸','roma':'🇮🇹','estambul':'🇹🇷','istanbul':'🇹🇷','atenas':'🇬🇷','parís':'🇫🇷','paris':'🇫🇷','praga':'🇨🇿','prague':'🇨🇿','nueva york':'🇺🇸','new york':'🇺🇸'};function flaggedRoute(v){if(!v)return '—';return String(v).split('/').map(x=>{const k=x.trim().toUpperCase();return (AIRPORT_FLAGS[k]||'')+(AIRPORT_FLAGS[k]?' ':'')+x.trim()}).join(' / ')}function flaggedCity(v){if(!v)return '—';const f=CITY_FLAGS[String(v).trim().toLowerCase()];return (f?f+' ':'')+v}
+function updateLastLeg(){
+  const el=document.getElementById('lastLeg');
+  if(!el)return;
+  if(!rows.length){el.textContent='—';return}
+  const latest=rows.reduce((max,r)=>{
+    const d=String(r.flight_date||'');
+    return d>String(max||'')?d:max;
+  },'');
+  el.textContent=displayDate(latest)||'—';
+}
+
+function render(){const tb=document.getElementById('tbody');tb.innerHTML='';rows.forEach((r,i)=>{const tr=document.createElement('tr');['flight_date','airline','reservation','origin','departure_time','destination','arrival_time','flight_number'].forEach((k,j)=>{const td=document.createElement('td');td.style.background=colors[j];td.textContent=k==='flight_date'?displayDate(r[k]):(k==='origin'||k==='destination'?flaggedRoute(r[k]):(r[k]||'—'));tr.appendChild(td)});const a=document.createElement('td');a.className='actions';a.innerHTML='<button class="small edit" data-id="'+r.id+'">✏️</button><button class="small delete" data-id="'+r.id+'">🗑️</button>';tr.appendChild(a);tb.appendChild(tr)});document.getElementById('count').textContent=rows.length;updateLastLeg()}
+function openForm(r){editId=r?.id||null;document.getElementById('mtitle').textContent=r?'Editar vuelo':'Agregar vuelo';const vals=r?[displayDate(r.flight_date),r.airline,r.reservation,r.origin,r.departure_time,r.destination,r.arrival_time,r.flight_number]:Array(8).fill('');const box=document.getElementById('fields');box.innerHTML='';H.forEach((h,i)=>{const d=document.createElement('div');d.innerHTML='<label>'+h+'</label><input id="f'+i+'">';d.querySelector('input').value=vals[i]||'';box.appendChild(d)});document.getElementById('modal').classList.add('open')}function closeForm(){document.getElementById('modal').classList.remove('open')}
+async function loadFlights(){status('Cargando nube...');const {data,error}=await sb.from('flights').select('*').order('flight_date',{ascending:true}).order('created_at',{ascending:true});if(error){status('Error de base de datos',false,true);alert('No se pudo cargar la matriz: '+error.message);return}rows=data||[];if(rows.length===0)await seedInitial();else{render();status('Nube sincronizada',true)}}
+async function seedInitial(){const user=(await sb.auth.getUser()).data.user;if(!user)return;const payload=INITIAL.map(r=>({user_id:user.id,flight_date:toDbDate(r[0]),airline:r[1],reservation:r[2],origin:r[3],departure_time:r[4],destination:r[5],arrival_time:r[6],flight_number:r[7]}));const {data,error}=await sb.from('flights').insert(payload).select();if(error){status('Error al crear matriz',false,true);alert('No se pudo crear la matriz inicial: '+error.message);return}rows=data||[];render();status('Matriz inicial guardada en la nube',true)}
+async function saveRow(){const vals=H.map((_,i)=>document.getElementById('f'+i).value.trim());const user=(await sb.auth.getUser()).data.user;if(!user)return;const obj={flight_date:toDbDate(vals[0]),airline:vals[1],reservation:vals[2],origin:vals[3],departure_time:vals[4],destination:vals[5],arrival_time:vals[6],flight_number:vals[7]};if(editId){const {error}=await sb.from('flights').update(obj).eq('id',editId).eq('user_id',user.id);if(error){alert('No se pudo guardar: '+error.message);return}}else{obj.user_id=user.id;const {error}=await sb.from('flights').insert(obj);if(error){alert('No se pudo guardar: '+error.message);return}}closeForm();await loadFlights()}
+async function deleteRow(id){if(!confirm('¿Eliminar este vuelo de la nube?'))return;const {error}=await sb.from('flights').delete().eq('id',id);if(error){alert('No se pudo eliminar: '+error.message);return}await loadFlights()}async function resetInitial(){if(!confirm('¿Restaurar la matriz original? Esto reemplazará los vuelos de EUROPA-2027 en la nube.'))return;const user=(await sb.auth.getUser()).data.user;if(!user)return;const d=await sb.from('flights').delete().eq('user_id',user.id);if(d.error){alert('No se pudo limpiar la matriz: '+d.error.message);return}await seedInitial()}
+async function initUser(user){document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('userEmail').textContent=user.email||'';await loadFlights();await loadHotels();await loadEntries();if(channel)await sb.removeChannel(channel);if(hotelChannel)await sb.removeChannel(hotelChannel);if(entryChannel)await sb.removeChannel(entryChannel);channel=sb.channel('flights-sync').on('postgres_changes',{event:'*',schema:'public',table:'flights',filter:'user_id=eq.'+user.id},()=>loadFlights()).subscribe();hotelChannel=sb.channel('hotels-sync').on('postgres_changes',{event:'*',schema:'public',table:'hotels',filter:'user_id=eq.'+user.id},()=>loadHotels()).subscribe();entryChannel=sb.channel('entries-sync').on('postgres_changes',{event:'*',schema:'public',table:'entries',filter:'user_id=eq.'+user.id},()=>loadEntries()).subscribe()}
+
+document.getElementById('loginBtn').onclick=async()=>{try{const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value;if(!email||!password){showLogin('Escribe tu correo y contraseña.');return}const {data,error}=await sb.auth.signInWithPassword({email,password});if(error){showLogin('No se pudo iniciar sesión: '+error.message);return}if(data.user)await initUser(data.user)}catch(e){showLogin('Error inesperado: '+(e.message||e))}};
+document.getElementById('signupBtn').onclick=async()=>{try{const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value;if(!email||!password){showLogin('Escribe tu correo y una contraseña.');return}if(password.length<6){showLogin('La contraseña debe tener al menos 6 caracteres.');return}showLogin('Creando cuenta...');const {data,error}=await sb.auth.signUp({email,password});if(error){showLogin('No se pudo crear la cuenta: '+error.message);return}if(data.session&&data.user){await initUser(data.user)}else{showLogin('Cuenta creada. Revisa tu correo para confirmar la cuenta y luego inicia sesión.')}}catch(e){showLogin('Error inesperado: '+(e.message||e))}};
+document.getElementById('logout').onclick=async()=>{await sb.auth.signOut();if(channel)await sb.removeChannel(channel);if(hotelChannel)await sb.removeChannel(hotelChannel);if(entryChannel)await sb.removeChannel(entryChannel);showLogin('Sesión cerrada.')};document.getElementById('add').onclick=()=>openForm(null);document.getElementById('cancel').onclick=closeForm;document.getElementById('confirm').onclick=saveRow;document.getElementById('save').onclick=loadFlights;document.getElementById('reset').onclick=resetInitial;
+document.getElementById('tbody').onclick=e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.id;const r=rows.find(x=>String(x.id)===String(id));if(b.classList.contains('edit'))openForm(r);if(b.classList.contains('delete'))deleteRow(id)};document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(t.dataset.screen).classList.add('active')});
+
+const HOTEL_H=['Ciudad','Hotel','Dirección','ChIn','ChOut','No. Noches','Total $','Status Pago'];
+let hotels=[],hotelEditId=null,hotelChannel=null;
+
+function hotelDbDate(v){
+  if(!v)return null;
+  const m=String(v).match(/^(\d{2})\/(\d{2})\/(\d{2})$/);
+  return m?'20'+m[3]+'-'+m[2]+'-'+m[1]:v;
+}
+function hotelDisplayDate(v){
+  if(!v)return '';
+  const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m?m[3]+'/'+m[2]+'/'+m[1].slice(2):v;
+}
+function hotelFormDate(v){
+  if(!v)return '';
+  const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m?v:'';
+}
+function hotelStatus(msg,ok=false,err=false){
+  status(msg,ok,err);
+}
+function mapHotelFromDb(r){
+  return {
+    id:r.id,
+    Ciudad:r.city||'',
+    Hotel:r.hotel||'',
+    Dirección:r.address||'',
+    ChIn:r.check_in||'',
+    ChOut:r.check_out||'',
+    'No. Noches':r.nights==null?'':String(r.nights),
+    'Total $':r.total==null?'':String(r.total),
+    'Status Pago':r.payment_status||''
+  };
+}
+function hotelPayload(obj,userId){
+  return {
+    user_id:userId,
+    city:obj.Ciudad,
+    hotel:obj.Hotel,
+    address:obj.Dirección||null,
+    check_in:hotelDbDate(obj.ChIn),
+    check_out:hotelDbDate(obj.ChOut),
+    nights:Number(obj['No. Noches']||0),
+    total:obj['Total $']===''?null:Number(obj['Total $']),
+    payment_status:obj['Status Pago']||null
+  };
+}
+function renderHotels(){
+  const tb=document.getElementById('hotelTbody');
+  if(!tb)return;
+  tb.innerHTML='';
+  if(!hotels.length){
+    tb.innerHTML='<tr><td colspan="9" class="empty">No hay hoteles registrados</td></tr>';
+    return;
+  }
+  const hotelColors=['#dbeafe','#dcfce7','#fef3c7','#ffedd5','#fee2e2','#ede9fe','#f3e8d3','#e5e7eb'];
+  hotels.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    HOTEL_H.forEach((k,j)=>{
+      const td=document.createElement('td');
+      td.style.background=hotelColors[j];
+      td.textContent=k==='Ciudad'?flaggedCity(r[k]):
+        ((k==='ChIn'||k==='ChOut')?hotelDisplayDate(r[k]):(r[k]||'—'));
+      if(k==='ChIn'||k==='ChOut'){td.style.whiteSpace='nowrap';td.style.minWidth='105px';td.style.width='105px';}
+      if(k==='No. Noches'||k==='Total $')td.style.textAlign='center';
+      tr.appendChild(td);
+    });
+    const a=document.createElement('td');
+    a.className='actions';
+    a.innerHTML='<button class="small editHotel" data-id="'+r.id+'">✏️</button><button class="small deleteHotel" data-id="'+r.id+'">🗑️</button>';
+    tr.appendChild(a);
+    tb.appendChild(tr);
+  });
+}
+async function loadHotels(){
+  const user=(await sb.auth.getUser()).data.user;
+  if(!user)return;
+  const {data,error}=await sb.from('hotels').select('*').eq('user_id',user.id).order('check_in',{ascending:true}).order('created_at',{ascending:true});
+  if(error){
+    hotelStatus('Error Hoteles',false,true);
+    alert('No se pudieron cargar los hoteles: '+error.message);
+    return;
+  }
+  hotels=(data||[]).map(mapHotelFromDb);
+  renderHotels();
+  hotelStatus('Vuelos y Hoteles sincronizados',true);
+}
+function openHotelForm(id=null){
+  hotelEditId=id;
+  const r=id==null?{}:(hotels.find(x=>String(x.id)===String(id))||{});
+  document.getElementById('hotelMtitle').textContent=id==null?'Agregar hotel':'Editar hotel';
+  const box=document.getElementById('hotelFields');box.innerHTML='';
+  HOTEL_H.forEach((h,i)=>{
+    const d=document.createElement('div');
+    const type=(h==='ChIn'||h==='ChOut')?'date':(h==='No. Noches'||h==='Total $'?'number':'text');
+    d.innerHTML='<label>'+h+'</label><input id="hf'+i+'" type="'+type+'">';
+    const input=d.querySelector('input');
+    if(h==='ChIn'||h==='ChOut')input.value=hotelFormDate(r[h]);
+    else input.value=r[h]||'';
+    box.appendChild(d);
+  });
+  document.getElementById('hotelModal').classList.add('open');
+}
+function closeHotelForm(){document.getElementById('hotelModal').classList.remove('open')}
+async function saveHotel(){
+  const user=(await sb.auth.getUser()).data.user;
+  if(!user)return;
+  const obj={};
+  HOTEL_H.forEach((h,i)=>obj[h]=document.getElementById('hf'+i).value.trim());
+  if(!obj.Ciudad||!obj.Hotel||!obj.ChIn||!obj.ChOut){
+    alert('Completa Ciudad, Hotel, ChIn y ChOut.');
+    return;
+  }
+  const payload=hotelPayload(obj,user.id);
+  let error=null;
+  if(hotelEditId!=null){
+    const res=await sb.from('hotels').update(payload).eq('id',hotelEditId).eq('user_id',user.id);
+    error=res.error;
+  }else{
+    const res=await sb.from('hotels').insert(payload);
+    error=res.error;
+  }
+  if(error){
+    alert('No se pudo guardar el hotel: '+error.message);
+    return;
+  }
+  closeHotelForm();
+  await loadHotels();
+}
+async function deleteHotel(id){
+  if(!confirm('¿Eliminar este hotel de la nube?'))return;
+  const user=(await sb.auth.getUser()).data.user;
+  if(!user)return;
+  const {error}=await sb.from('hotels').delete().eq('id',id).eq('user_id',user.id);
+  if(error){
+    alert('No se pudo eliminar el hotel: '+error.message);
+    return;
+  }
+  await loadHotels();
+}
+document.getElementById('addHotel').onclick=()=>openHotelForm();
+document.getElementById('syncHotels').onclick=loadHotels;
+document.getElementById('hotelCancel').onclick=closeHotelForm;
+document.getElementById('hotelConfirm').onclick=saveHotel;
+document.getElementById('hotelTbody').onclick=e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const id=b.dataset.id;
+  if(b.classList.contains('editHotel'))openHotelForm(id);
+  if(b.classList.contains('deleteHotel'))deleteHotel(id);
+};
+
+
+const FIXED_CITIES=['Estambul','Grecia','Lisboa','Madrid','París','Praga','Roma'];
+const FLAGS={estambul:'🇹🇷',grecia:'🇬🇷',lisboa:'🇵🇹',madrid:'🇪🇸',parís:'🇫🇷',paris:'🇫🇷',praga:'🇨🇿',roma:'🇮🇹'};
+const ALIASES={estambul:['Estambul','Istanbul'],grecia:['Grecia','Atenas','Athens'],lisboa:['Lisboa','Lisbon'],madrid:['Madrid'],parís:['París','Paris'],praga:['Praga','Prague'],roma:['Roma','Rome']};
+let entries=[],selectedCity=null,entryEditMode=null,entryEditId=null;
+function normalize(v){return String(v||'').trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\p{L}\p{N}\s]/gu,'').replace(/\s+/g,' ')}
+function entryFlagCity(city){const f=FLAGS[String(city||'').trim().toLowerCase()]||'';return (f?f+' ':'')+(city||'—')}
+function cityList(){return FIXED_CITIES.slice()}
+function renderCities(){const tb=document.getElementById('citiesTbody');if(!tb)return;tb.innerHTML='';cityList().forEach(city=>{const tr=document.createElement('tr');const td=document.createElement('td');td.textContent=entryFlagCity(city);tr.appendChild(td);const a=document.createElement('td');a.className='actions';const enc=encodeURIComponent(city);a.innerHTML='<button type="button" class="small primary openCity" data-city="'+enc+'">Abrir los POI</button><button type="button" class="small edit editCity" data-city="'+enc+'">✏️</button><button type="button" class="small delete deleteCity" data-city="'+enc+'">🗑️</button>';tr.appendChild(a);tb.appendChild(tr)})}
+function showCities(){selectedCity=null;document.getElementById('poiScreen').classList.add('hidden');document.getElementById('citiesScreen').classList.remove('hidden');renderCities()}
+function renderPoi(list){const tb=document.getElementById('poiTbody');if(!tb)return;tb.innerHTML='';if(!list.length){tb.innerHTML='<tr><td colspan="5" class="empty">No hay POI registrados para esta ciudad.</td></tr>';return}list.slice().sort((a,b)=>normalize(a.poi).localeCompare(normalize(b.poi),'es',{sensitivity:'base',numeric:true})).forEach(r=>{const tr=document.createElement('tr');const vals=[entryFlagCity(r.city),r.poi,r.price==null?'':Number(r.price).toFixed(2),r.time||''];vals.forEach(v=>{const td=document.createElement('td');td.textContent=v||'—';tr.appendChild(td)});const a=document.createElement('td');a.className='actions';a.innerHTML='<button class="small edit editPoi" data-id="'+r.id+'">✏️</button><button class="small delete deletePoi" data-id="'+r.id+'">🗑️</button>';tr.appendChild(a);tb.appendChild(tr)})}
+function entryAliasKeys(city){const k=normalize(city);const canonical=FIXED_CITIES.find(c=>normalize(c)===k)||city;return Array.from(new Set(ALIASES[normalize(canonical)]||[canonical]))}
+async function queryCityRows(city){const user=(await sb.auth.getUser()).data.user;if(!user)throw new Error('Sesión no disponible');const aliases=entryAliasKeys(city).map(normalize);const {data,error}=await sb.from('entries').select('*').eq('user_id',user.id);if(error)throw error;const seen=new Set();return (Array.isArray(data)?data:[]).filter(r=>{if(seen.has(r.id))return false;seen.add(r.id);const c=normalize(r.city),p=normalize(r.poi);return aliases.includes(c)&&p&&p!=='city'&&p!=='__city__'})}
+async function showCity(city){selectedCity=city;document.getElementById('citiesScreen').classList.add('hidden');document.getElementById('poiScreen').classList.remove('hidden');document.getElementById('poiTitle').textContent=entryFlagCity(city)+' · POI';document.getElementById('poiTbody').innerHTML='<tr><td colspan="5" class="empty">Cargando todos los POI…</td></tr>';try{const rs=await queryCityRows(city);renderPoi(rs);status(rs.length+' POI cargados · '+city,true)}catch(e){document.getElementById('poiTbody').innerHTML='<tr><td colspan="5" class="empty">Error: '+(e.message||e)+'</td></tr>';status('Error al cargar POI',false,true)}}
+async function loadEntries(){const user=(await sb.auth.getUser()).data.user;if(!user)return;const {data,error}=await sb.from('entries').select('*').eq('user_id',user.id);if(error){status('Error de base de datos',false,true);alert('No se pudieron cargar las entradas: '+error.message);return}entries=Array.isArray(data)?data:[];renderCities();if(selectedCity){const rs=await queryCityRows(selectedCity);renderPoi(rs)}status('Vuelos, Hoteles y Entradas sincronizados',true)}
+function openPoiForm(row=null){entryEditMode='poi';entryEditId=row?.id||null;document.getElementById('entryPoiModalTitle').textContent=row?'Editar POI':'Agregar POI';const vals=row?[selectedCity,row.poi,row.price??'',row.time??'']:[selectedCity,'','',''];const labels=['Ciudad','Atracción / POI','Precio $','Horario'];const box=document.getElementById('entryPoiFields');box.innerHTML='';labels.forEach((label,i)=>{const d=document.createElement('div');d.innerHTML='<label>'+label+'<input id="epf'+i+'"></label>';const inp=d.querySelector('input');inp.value=vals[i]??'';if(i===0)inp.readOnly=true;if(i===2)inp.type='number';box.appendChild(d)});document.getElementById('entryPoiModal').classList.add('open')}
+function openCityForm(oldCity=null){entryEditMode='city';entryEditId=oldCity;document.getElementById('entryPoiModalTitle').textContent=oldCity?'Editar ciudad':'Agregar ciudad';const box=document.getElementById('entryPoiFields');box.innerHTML='';const d=document.createElement('div');d.innerHTML='<label>Ciudad<input id="epf0"></label>';d.querySelector('input').value=oldCity||'';box.appendChild(d);document.getElementById('entryPoiModal').classList.add('open')}
+function closeEntryPoiModal(){document.getElementById('entryPoiModal').classList.remove('open');entryEditMode=null;entryEditId=null}
+async function savePoi(){const user=(await sb.auth.getUser()).data.user;if(!user)return;const city=document.getElementById('epf0').value.trim(),poi=document.getElementById('epf1').value.trim(),price=document.getElementById('epf2').value.trim(),time=document.getElementById('epf3').value.trim();if(!city||!poi){alert('Ciudad y POI son obligatorios.');return}const payload={city,poi,price:price===''?null:Number(price),time:time||null};let res;if(entryEditId){res=await sb.from('entries').update(payload).eq('id',entryEditId).eq('user_id',user.id).select().single()}else{res=await sb.from('entries').insert({...payload,user_id:user.id}).select().single()}if(res.error){alert('No se pudo guardar: '+res.error.message);return}closeEntryPoiModal();await loadEntries();if(selectedCity)await showCity(selectedCity)}
+async function saveCity(){const user=(await sb.auth.getUser()).data.user;if(!user)return;const newCity=document.getElementById('epf0').value.trim();if(!newCity){alert('Escribe una ciudad.');return}if(entryEditId){const oldCity=entryEditId;const {data,error}=await sb.from('entries').select('id,poi').eq('user_id',user.id).eq('city',oldCity);if(error){alert(error.message);return}if(data?.length){const {error:e}=await sb.from('entries').update({city:newCity}).eq('user_id',user.id).eq('city',oldCity);if(e){alert(e.message);return}}else{const {error:e}=await sb.from('entries').insert({user_id:user.id,city:newCity,poi:'__CITY__',price:null,time:null});if(e){alert(e.message);return}}}else{const {error}=await sb.from('entries').insert({user_id:user.id,city:newCity,poi:'__CITY__',price:null,time:null});if(error){alert(error.message);return}}closeEntryPoiModal();await loadEntries()}
+async function deletePoi(id){if(!confirm('¿Eliminar este POI?'))return;const user=(await sb.auth.getUser()).data.user;const {error}=await sb.from('entries').delete().eq('id',id).eq('user_id',user.id);if(error){alert(error.message);return}await loadEntries();if(selectedCity)await showCity(selectedCity)}
+async function deleteCity(city){if(!confirm('¿Eliminar la ciudad y todos sus POI?'))return;const user=(await sb.auth.getUser()).data.user;for(const alias of entryAliasKeys(city)){const {error}=await sb.from('entries').delete().eq('user_id',user.id).eq('city',alias);if(error){alert(error.message);return}}await loadEntries()}
+document.getElementById('citiesTbody').onclick=async e=>{const b=e.target.closest('button');if(!b)return;const city=decodeURIComponent(b.dataset.city||'');if(b.classList.contains('openCity'))await showCity(city);else if(b.classList.contains('editCity'))openCityForm(city);else if(b.classList.contains('deleteCity'))await deleteCity(city)};
+document.getElementById('poiTbody').onclick=async e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.id;if(b.classList.contains('editPoi')){const row=(await queryCityRows(selectedCity)).find(x=>String(x.id)===String(id));if(row)openPoiForm(row)}else if(b.classList.contains('deletePoi'))await deletePoi(id)};
+document.getElementById('addPoi').onclick=()=>openPoiForm();document.getElementById('addCity').onclick=()=>openCityForm();document.getElementById('backCities').onclick=showCities;document.getElementById('entryPoiCancel').onclick=closeEntryPoiModal;document.getElementById('entryPoiConfirm').onclick=()=>entryEditMode==='city'?saveCity():savePoi;document.getElementById('syncEntries').onclick=loadEntries;
+sb.auth.getSession().then(({data})=>{if(data.session?.user)initUser(data.session.user);else showLogin('')}).catch(e=>showLogin('No se pudo conectar con Supabase: '+(e.message||e)));document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!document.getElementById('app').classList.contains('hidden')){loadFlights();loadHotels();loadEntries()}});
+</script></body></html>
