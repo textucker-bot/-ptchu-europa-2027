@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>PTCHU · Entradas V9 prueba</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f5f9;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:9px 12px;font-weight:700}
+.primary{background:#2563eb;color:#fff}.dark{background:#0f172a;color:#fff}.light{background:#e2e8f0;color:#334155}
+.small{padding:7px 9px;margin:2px}.edit{background:#dbeafe}.delete{background:#fee2e2}
+.hidden{display:none!important}
+header{background:#0f172a;color:#fff;padding:16px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:21px} header p{margin:4px 0;color:#cbd5e1;font-size:13px}
+.userline{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:12px;color:#cbd5e1}
+.userline button{padding:6px 9px;background:#334155;color:#fff}
+.status{display:inline-block;margin-top:8px;padding:5px 9px;border-radius:999px;font-size:12px;background:#334155}
+.status.ok{background:#166534}.status.err{background:#991b1b}
+main{padding:14px;max-width:1100px;margin:auto}
+.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 20px #00000012;margin-bottom:14px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.tablewrap{overflow:auto;border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:620px}
+th,td{padding:10px 8px;text-align:center;border:2px solid white;font-size:13px}
+th{background:#e2e8f0;font-size:12px}
+td:first-child,th:first-child{text-align:left}
+.actions{white-space:nowrap;background:#f8fafc!important}
+.empty{text-align:center;color:#64748b;padding:25px}
+.back{margin-bottom:12px}
+h2{margin-top:0}
+.muted{color:#64748b;font-size:14px}
+.modal{display:none;position:fixed;inset:0;background:#0009;z-index:20;padding:14px;align-items:center;justify-content:center}
+.modal.open{display:flex}
+.modalbox{background:#fff;border-radius:16px;padding:20px;width:min(560px,100%);max-height:92vh;overflow:auto}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid label{font-size:12px;font-weight:800}
+.grid input,.grid select{width:100%;padding:10px;margin-top:4px;border:1px solid #cbd5e1;border-radius:9px;font-size:15px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}
+.loginbox{background:#fff;border-radius:16px;padding:20px;width:min(480px,100%);box-shadow:0 4px 20px #00000012}
+.loginbox h1{margin:0 0 8px}.loginbox p,.note{color:#64748b;font-size:14px}
+.loginbox label{display:block;margin-top:12px;font-size:12px;font-weight:800}
+.loginbox input{width:100%;padding:10px;margin-top:4px;border:1px solid #cbd5e1;border-radius:9px;font-size:15px}
+.login-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="login" class="login">
+  <div class="loginbox">
+    <h1>PTCHU · EUROPA 2027</h1>
+    <p>Prueba V8 del módulo Entradas.</p>
+    <label>Correo electrónico
+      <input id="email" type="email" autocomplete="email" placeholder="tu correo">
+    </label>
+    <label>Contraseña
+      <input id="password" type="password" autocomplete="current-password" placeholder="mínimo 6 caracteres">
+    </label>
+    <div class="login-actions">
+      <button class="primary" id="loginBtn">Iniciar sesión</button>
+      <button class="light" id="signupBtn">Crear cuenta</button>
+    </div>
+    <div id="loginMsg" class="note"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+<header>
+  <h1>PTCHU · EUROPA 2027</h1>
+  <p>🎟️ Entradas · V9 PRUEBA</p>
+  <div class="userline"><span id="userEmail"></span><button id="logout">Cerrar sesión</button></div>
+  <span id="cloudStatus" class="status">Conectando...</span>
+</header>
+
+<main>
+  <section id="citiesScreen" class="card">
+    <h2>🎟️ PTCHU · Entradas</h2>
+    <div class="muted">Ciudades únicas. Abre una ciudad para ver <b>todos</b> sus POI.</div>
+    <div class="toolbar">
+      <button class="primary" id="addCity">＋ Agregar ciudad</button>
+      <button class="dark" id="sync">☁️ Sincronizar</button>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Ciudad</th><th class="actions">Acciones</th></tr></thead>
+        <tbody id="citiesTbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="poiScreen" class="card hidden">
+    <button class="light back" id="backCities">← Volver a ciudades</button>
+    <h2 id="poiTitle">POI</h2>
+    <div class="muted">Se muestran todos los POI asignados a esta ciudad, ordenados alfabéticamente.</div>
+    <div class="toolbar">
+      <button class="primary" id="addPoi">＋ Agregar POI</button>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Ciudad</th><th>Atracción / POI</th><th>Precio $</th><th>Horario</th><th class="actions">Acciones</th></tr></thead>
+        <tbody id="poiTbody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+</div>
+
+<div id="modal" class="modal">
+  <div class="modalbox">
+    <h2 id="modalTitle">Agregar POI</h2>
+    <div class="grid" id="fields"></div>
+    <div class="modal-actions">
+      <button class="light" id="cancel">Cancelar</button>
+      <button class="primary" id="confirm">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://usqqsseoqdxqqapbtqsi.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_VG4BsTNtQbJu-ER89xLUJQ_7INq5RFL';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+
+const FIXED_CITIES=['Estambul','Grecia','Lisboa','Madrid','París','Praga','Roma'];
+const FLAGS={
+  estambul:'🇹🇷', grecia:'🇬🇷', lisboa:'🇵🇹', madrid:'🇪🇸',
+  parís:'🇫🇷', paris:'🇫🇷', praga:'🇨🇿', roma:'🇮🇹'
+};
+const ALIASES={
+  estambul:['Estambul','Istanbul'],
+  grecia:['Grecia','Atenas','Athens'],
+  lisboa:['Lisboa','Lisbon'],
+  madrid:['Madrid'],
+  parís:['París','Paris'],
+  praga:['Praga','Prague'],
+  roma:['Roma','Rome']
+};
+
+let entries=[];
+let selectedCity=null;
+let editMode=null;
+let editId=null;
+
+function normalize(v){
+  return String(v||'').trim().toLocaleLowerCase('es')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^\p{L}\p{N}\s]/gu,'').replace(/\s+/g,' ');
+}
+function flagCity(city){
+  const f=FLAGS[String(city||'').trim().toLowerCase()]||'';
+  return (f?f+' ':'')+(city||'—');
+}
+function status(msg,ok=false,err=false){
+  const e=document.getElementById('cloudStatus');
+  e.textContent=msg;
+  e.className='status'+(ok?' ok':'')+(err?' err':'');
+}
+function showLogin(msg=''){
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('login').classList.remove('hidden');
+  document.getElementById('loginMsg').textContent=msg;
+}
+function showApp(){
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+}
+
+function cityList(){
+  const map=new Map();
+  FIXED_CITIES.forEach(c=>map.set(normalize(c),c));
+  entries.forEach(r=>{
+    const c=String(r.city||'').trim();
+    const p=normalize(r.poi);
+    if(!c || p==='city' || p==='__city__')return;
+    const k=normalize(c);
+    if(!map.has(k))map.set(k,c);
+  });
+  return Array.from(map.values()).sort((a,b)=>normalize(a).localeCompare(normalize(b),'es',{sensitivity:'base',numeric:true}));
+}
+
+function renderCities(){
+  const tb=document.getElementById('citiesTbody');
+  tb.innerHTML='';
+  cityList().forEach(city=>{
+    const tr=document.createElement('tr');
+    const td=document.createElement('td');
+    td.textContent=flagCity(city);
+    tr.appendChild(td);
+    const a=document.createElement('td');
+    a.className='actions';
+    a.innerHTML=
+      '<button class="small primary openCity" data-city="'+encodeURIComponent(city)+'">Abrir los POI</button>'+
+      '<button class="small edit editCity" data-city="'+encodeURIComponent(city)+'">✏️</button>'+
+      '<button class="small delete deleteCity" data-city="'+encodeURIComponent(city)+'">🗑️</button>';
+    tr.appendChild(a);
+    tb.appendChild(tr);
+  });
+}
+
+function showCities(){
+  selectedCity=null;
+  document.getElementById('poiScreen').classList.add('hidden');
+  document.getElementById('citiesScreen').classList.remove('hidden');
+  renderCities();
+}
+
+function renderPoi(rows){
+  const tb=document.getElementById('poiTbody');
+  tb.innerHTML='';
+  if(!rows.length){
+    tb.innerHTML='<tr><td colspan="5" class="empty">No hay POI registrados para esta ciudad.</td></tr>';
+    return;
+  }
+  rows.slice().sort((a,b)=>normalize(a.poi).localeCompare(normalize(b.poi),'es',{sensitivity:'base',numeric:true}))
+  .forEach(r=>{
+    const tr=document.createElement('tr');
+    const vals=[flagCity(r.city),r.poi,r.price==null?'':Number(r.price).toFixed(2),r.time||''];
+    vals.forEach(v=>{const td=document.createElement('td');td.textContent=v||'—';tr.appendChild(td)});
+    const a=document.createElement('td');a.className='actions';
+    a.innerHTML='<button class="small edit editPoi" data-id="'+r.id+'">✏️</button><button class="small delete deletePoi" data-id="'+r.id+'">🗑️</button>';
+    tr.appendChild(a);tb.appendChild(tr);
+  });
+}
+
+/* V9: direct database query when a city is opened.
+   This deliberately does NOT depend on the global entries array. */
+async function queryCityRows(city){
+  const user=(await sb.auth.getUser()).data.user;
+  if(!user)throw new Error('Sesión no disponible');
+
+  const aliases=ALIAS_KEYS(city);
+  let all=[];
+
+  for(const alias of aliases){
+    const {data,error}=await sb.from('entries')
+      .select('*')
+      .eq('user_id',user.id)
+      .eq('city',alias);
+    if(error)throw error;
+    if(Array.isArray(data))all.push(...data);
+  }
+
+  const seen=new Set();
+  all=all.filter(r=>{
+    if(seen.has(r.id))return false;
+    seen.add(r.id);
+    const p=normalize(r.poi);
+    return p && p!=='city' && p!=='__city__';
+  });
+  return all;
+}
+function ALIAS_KEYS(city){
+  const k=normalize(city);
+  const canonical=FIXED_CITIES.find(c=>normalize(c)===k)||city;
+  const aliases=ALIASES[normalize(canonical)]||[canonical];
+  return Array.from(new Set(aliases));
+}
+
+async function showCity(city){
+  selectedCity=city;
+  document.getElementById('citiesScreen').classList.add('hidden');
+  document.getElementById('poiScreen').classList.remove('hidden');
+  document.getElementById('poiTitle').textContent=flagCity(city)+' · POI';
+  document.getElementById('poiTbody').innerHTML='<tr><td colspan="5" class="empty">Cargando todos los POI…</td></tr>';
+
+  try{
+    const rows=await queryCityRows(city);
+    renderPoi(rows);
+    status(rows.length+' POI cargados · '+city,true);
+  }catch(e){
+    document.getElementById('poiTbody').innerHTML='<tr><td colspan="5" class="empty">Error: '+(e.message||e)+'</td></tr>';
+    status('Error al cargar POI',false,true);
+  }
+}
+
+async function loadEntries(){
+  const user=(await sb.auth.getUser()).data.user;
+  if(!user){showLogin('Inicia sesión.');return;}
+  status('Cargando Entradas…');
+  const {data,error}=await sb.from('entries').select('*').eq('user_id',user.id);
+  if(error){
+    status('Error de base de datos',false,true);
+    alert('No se pudieron cargar las entradas: '+error.message);
+    return;
+  }
+  entries=Array.isArray(data)?data:[];
+  renderCities();
+  status('Entradas sincronizadas · '+entries.length+' registros',true);
+}
+
+function openPoiForm(row=null){
+  editMode='poi'; editId=row?.id||null;
+  document.getElementById('modalTitle').textContent=row?'Editar POI':'Agregar POI';
+  const vals=row?[selectedCity,row.poi,row.price??'',row.time??'']:[selectedCity,'','',''];
+  const labels=['Ciudad','Atracción / POI','Precio $','Horario'];
+  const box=document.getElementById('fields');box.innerHTML='';
+  labels.forEach((label,i)=>{
+    const d=document.createElement('div');
+    d.innerHTML='<label>'+label+'<input id="f'+i+'"></label>';
+    const inp=d.querySelector('input');inp.value=vals[i]??'';
+    if(i===0)inp.readOnly=true;
+    if(i===2)inp.type='number';
+    box.appendChild(d);
+  });
+  document.getElementById('modal').classList.add('open');
+}
+function openCityForm(oldCity=null){
+  editMode='city';editId=oldCity;
+  document.getElementById('modalTitle').textContent=oldCity?'Editar ciudad':'Agregar ciudad';
+  const box=document.getElementById('fields');box.innerHTML='';
+  const d=document.createElement('div');d.innerHTML='<label>Ciudad<input id="f0"></label>';
+  d.querySelector('input').value=oldCity||'';box.appendChild(d);
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');editMode=null;editId=null;}
+
+async function savePoi(){
+  const user=(await sb.auth.getUser()).data.user;if(!user)return;
+  const city=document.getElementById('f0').value.trim();
+  const poi=document.getElementById('f1').value.trim();
+  const price=document.getElementById('f2').value.trim();
+  const time=document.getElementById('f3').value.trim();
+  if(!city||!poi){alert('Ciudad y POI son obligatorios.');return;}
+  const payload={city,poi,price:price===''?null:Number(price),time:time||null};
+  let res;
+  if(editId){
+    res=await sb.from('entries').update(payload).eq('id',editId).eq('user_id',user.id).select().single();
+  }else{
+    res=await sb.from('entries').insert({...payload,user_id:user.id}).select().single();
+  }
+  if(res.error){alert('No se pudo guardar: '+res.error.message);return;}
+  closeModal();
+  await loadEntries();
+  await showCity(selectedCity);
+}
+
+async function saveCity(){
+  const user=(await sb.auth.getUser()).data.user;if(!user)return;
+  const newCity=document.getElementById('f0').value.trim();
+  if(!newCity){alert('Escribe una ciudad.');return;}
+  if(editId){
+    const oldCity=editId;
+    const {data,error}=await sb.from('entries').select('id,poi').eq('user_id',user.id).eq('city',oldCity);
+    if(error){alert(error.message);return;}
+    if(data?.length){
+      const {error:e}=await sb.from('entries').update({city:newCity}).eq('user_id',user.id).eq('city',oldCity);
+      if(e){alert(e.message);return;}
+    }else{
+      const {error:e}=await sb.from('entries').insert({user_id:user.id,city:newCity,poi:'__CITY__',price:null,time:null});
+      if(e){alert(e.message);return;}
+    }
+  }else{
+    const {error}=await sb.from('entries').insert({user_id:user.id,city:newCity,poi:'__CITY__',price:null,time:null});
+    if(error){alert(error.message);return;}
+  }
+  closeModal();await loadEntries();
+}
+
+async function deletePoi(id){
+  if(!confirm('¿Eliminar este POI?'))return;
+  const user=(await sb.auth.getUser()).data.user;
+  const {error}=await sb.from('entries').delete().eq('id',id).eq('user_id',user.id);
+  if(error){alert(error.message);return;}
+  await loadEntries();await showCity(selectedCity);
+}
+async function deleteCity(city){
+  if(!confirm('¿Eliminar la ciudad y todos sus POI?'))return;
+  const user=(await sb.auth.getUser()).data.user;
+  const aliases=ALIAS_KEYS(city);
+  for(const alias of aliases){
+    const {error}=await sb.from('entries').delete().eq('user_id',user.id).eq('city',alias);
+    if(error){alert(error.message);return;}
+  }
+  await loadEntries();
+}
+
+document.getElementById('citiesTbody').onclick=async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const city=decodeURIComponent(b.dataset.city||'');
+  if(b.classList.contains('openCity'))await showCity(city);
+  else if(b.classList.contains('editCity'))openCityForm(city);
+  else if(b.classList.contains('deleteCity'))await deleteCity(city);
+};
+document.getElementById('poiTbody').onclick=async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const id=b.dataset.id;
+  if(b.classList.contains('editPoi')){
+    const row=await queryCityRows(selectedCity).then(rs=>rs.find(x=>String(x.id)===String(id)));
+    if(row)openPoiForm(row);
+  }else if(b.classList.contains('deletePoi'))await deletePoi(id);
+};
+
+document.getElementById('addPoi').onclick=()=>openPoiForm();
+document.getElementById('addCity').onclick=()=>openCityForm();
+document.getElementById('backCities').onclick=showCities;
+document.getElementById('cancel').onclick=closeModal;
+document.getElementById('confirm').onclick=()=>editMode==='city'?saveCity():savePoi();
+document.getElementById('sync').onclick=loadEntries;
+
+document.getElementById('loginBtn').onclick=async()=>{
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('password').value;
+  const {data,error}=await sb.auth.signInWithPassword({email,password});
+  if(error){document.getElementById('loginMsg').textContent=error.message;return;}
+  document.getElementById('userEmail').textContent=data.user.email||'';
+  showApp();await loadEntries();
+};
+document.getElementById('signupBtn').onclick=async()=>{
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('password').value;
+  const {error}=await sb.auth.signUp({email,password});
+  document.getElementById('loginMsg').textContent=error?error.message:'Revisa tu correo para confirmar la cuenta.';
+};
+document.getElementById('logout').onclick=async()=>{await sb.auth.signOut();showLogin('Sesión cerrada.');};
+
+(async()=>{
+  const {data}=await sb.auth.getSession();
+  if(data.session){
+    document.getElementById('userEmail').textContent=data.session.user.email||'';
+    showApp();await loadEntries();
+  }else showLogin('');
+})();
+</script>
+</body>
+</html>
