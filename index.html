@@ -12,10 +12,6 @@
 .v12-entry-card .actions{white-space:nowrap;background:#f8fafc!important}
 .v12-entry-card .small{padding:7px 9px;margin:2px}
 .v12-entry-card .back{margin-bottom:12px}
-
-/* Entradas: ciudades más legibles, sin alterar las demás matrices. */
-#v12CitiesTable td:first-child{font-size:18px!important;font-weight:700;padding:14px 10px!important;text-align:left}
-#v12CitiesTable th{font-size:15px!important}
 </style>
 <style id="ptchu-entradas-v25-css">
 /* Solo Entradas: formato adaptable; no afecta Vuelos ni Hoteles. */
@@ -511,7 +507,7 @@ window.loadEntries=async function(){
     const aliases=ALIASES[normalize(canonical)];
     return Array.from(new Set(aliases||[canonical]));
   }
-  function flagCity(city){const c=canonicalCity(city)||'—';const flags={'estambul':'🇹🇷','istanbul':'🇹🇷','grecia':'🇬🇷','atenas':'🇬🇷','athens':'🇬🇷','lisboa':'🇵🇹','lisbon':'🇵🇹','madrid':'🇪🇸','paris':'🇫🇷','praga':'🇨🇿','prague':'🇨🇿','roma':'🇮🇹','rome':'🇮🇹','berlin':'🇩🇪','berlín':'🇩🇪','nueva york':'🇺🇸','new york':'🇺🇸'};const f=flags[normalize(c)]||flags[normalize(city)];return (f?f+' ':'')+c;}
+  function flagCity(city){return canonicalCity(city)||'—';}
   function getCityList(){
     const data=Array.isArray(window.PTCHU_ENTRY_DATA)?window.PTCHU_ENTRY_DATA:[];
     const map=new Map();
