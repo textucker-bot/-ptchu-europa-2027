@@ -513,7 +513,7 @@ window.loadEntries=async function(){
     const aliases=ALIASES[normalize(canonical)];
     return Array.from(new Set(aliases||[canonical]));
   }
-  function flagCity(city){const c=canonicalCity(city)||'—';const key=normalize(c);const flags={'estambul':'🇹🇷','istanbul':'🇹🇷','grecia':'🇬🇷','atenas':'🇬🇷','athens':'🇬🇷','lisboa':'🇵🇹','lisbon':'🇵🇹','madrid':'🇪🇸','toledo':'🇪🇸','paris':'🇫🇷','praga':'🇨🇿','prague':'🇨🇿','roma':'🇮🇹','rome':'🇮🇹','berlin':'🇩🇪','berlín':'🇩🇪','nueva york':'🇺🇸','new york':'🇺🇸'};const f=flags[key]||flags[normalize(city)]||'';return f?f+'  '+c:c;}
+  function flagCity(city){const c=canonicalCity(city)||'—';const raw=normalize(city);const key=normalize(c);const flags=[[/\b(estambul|istanbul|turquia|turkey)\b/,'🇹🇷'],[/\b(grecia|atenas|athens)\b/,'🇬🇷'],[/\b(lisboa|lisbon|sintra|portugal)\b/,'🇵🇹'],[/\b(madrid|toledo|espana|spain)\b/,'🇪🇸'],[/\b(paris|francia|france)\b/,'🇫🇷'],[/\b(praga|prague|chequia|republica checa|czech)\b/,'🇨🇿'],[/\b(roma|rome|italia|italy)\b/,'🇮🇹'],[/\b(berlin|alemania|germany)\b/,'🇩🇪'],[/\b(nueva york|new york|usa|estados unidos)\b/,'🇺🇸']];let f='';for(const [re,emoji] of flags){if(re.test(raw)||re.test(key)){f=emoji;break;}}return f?f+'  '+c:c;}
   function getCityList(){
     const data=Array.isArray(window.PTCHU_ENTRY_DATA)?window.PTCHU_ENTRY_DATA:[];
     const map=new Map();
