@@ -14,7 +14,7 @@
 .v12-entry-card .back{margin-bottom:12px}
 
 /* Entradas: ciudades más legibles, sin alterar las demás matrices. */
-#v12CitiesTable td:first-child{font-size:18px!important;font-weight:700;padding:14px 10px!important;text-align:left}
+#v12CitiesTable td:first-child{font-size:19px!important;font-weight:700;padding:14px 10px!important;text-align:left;white-space:nowrap}
 #v12CitiesTable th{font-size:15px!important}
 </style>
 <style id="ptchu-entradas-v25-css">
@@ -482,8 +482,8 @@ window.loadEntries=async function(){
    Vuelos y Hoteles no se modifican.
 */
 (function(){
-  const FIXED_CITIES=['Estambul','Grecia','Lisboa','Madrid','París','Praga','Roma'];
-  // Las ciudades de Entradas se muestran sin banderas.
+  const FIXED_CITIES=['Estambul','Grecia','Lisboa','Madrid','París','Praga','Roma','Toledo','Berlín'];
+  // Entradas: bandera por país para ciudades conocidas; las demás funciones quedan intactas.
   const ALIASES={
     estambul:['Estambul','Istanbul'],
     grecia:['Grecia','Atenas','Athens'],
@@ -491,7 +491,9 @@ window.loadEntries=async function(){
     madrid:['Madrid'],
     paris:['París','Paris'],
     praga:['Praga','Prague'],
-    roma:['Roma','Rome']
+    roma:['Roma','Rome'],
+    toledo:['Toledo'],
+    berlin:['Berlín','Berlin']
   };
   let selectedCity=null, editMode=null, editId=null;
   const $=id=>document.getElementById(id);
@@ -511,7 +513,7 @@ window.loadEntries=async function(){
     const aliases=ALIASES[normalize(canonical)];
     return Array.from(new Set(aliases||[canonical]));
   }
-  function flagCity(city){const c=canonicalCity(city)||'—';const flags={'estambul':'🇹🇷','istanbul':'🇹🇷','grecia':'🇬🇷','atenas':'🇬🇷','athens':'🇬🇷','lisboa':'🇵🇹','lisbon':'🇵🇹','madrid':'🇪🇸','paris':'🇫🇷','praga':'🇨🇿','prague':'🇨🇿','roma':'🇮🇹','rome':'🇮🇹','berlin':'🇩🇪','berlín':'🇩🇪','nueva york':'🇺🇸','new york':'🇺🇸'};const f=flags[normalize(c)]||flags[normalize(city)];return (f?f+' ':'')+c;}
+  function flagCity(city){const c=canonicalCity(city)||'—';const key=normalize(c);const flags={'estambul':'🇹🇷','istanbul':'🇹🇷','grecia':'🇬🇷','atenas':'🇬🇷','athens':'🇬🇷','lisboa':'🇵🇹','lisbon':'🇵🇹','madrid':'🇪🇸','toledo':'🇪🇸','paris':'🇫🇷','praga':'🇨🇿','prague':'🇨🇿','roma':'🇮🇹','rome':'🇮🇹','berlin':'🇩🇪','berlín':'🇩🇪','nueva york':'🇺🇸','new york':'🇺🇸'};const f=flags[key]||flags[normalize(city)]||'';return f?f+'  '+c:c;}
   function getCityList(){
     const data=Array.isArray(window.PTCHU_ENTRY_DATA)?window.PTCHU_ENTRY_DATA:[];
     const map=new Map();
