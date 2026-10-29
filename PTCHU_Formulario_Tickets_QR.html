@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PTCHU Europa 2027 · Tickets QR</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17212b;background:#f5f7fa}
+*{box-sizing:border-box}body{margin:0;padding:20px}.wrap{max-width:720px;margin:auto}
+.card{background:#fff;border:1px solid #dce3ea;border-radius:16px;padding:22px;box-shadow:0 5px 20px #17212b0b}
+h1{font-size:1.45rem;margin:0 0 6px}.sub{color:#5c6875;margin:0 0 20px}
+.notice{background:#fff7df;border:1px solid #f0d58a;border-radius:10px;padding:12px;margin-bottom:18px;font-size:.92rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+label{display:block;font-weight:650;font-size:.92rem;margin:0 0 6px}
+input,select{width:100%;font:inherit;padding:11px;border:1px solid #cbd5df;border-radius:9px;background:#fff}
+.field{margin-bottom:14px}.filebox{border:1px dashed #aebdca;border-radius:10px;padding:13px;background:#fbfcfd}
+small{display:block;color:#637180;margin-top:6px;line-height:1.4}
+button{font:inherit;font-weight:650;border:0;border-radius:10px;padding:13px 16px;cursor:pointer}
+.primary{background:#087f5b;color:#fff;width:100%;margin-top:8px}.primary:disabled{opacity:.45;cursor:not-allowed}
+.secondary{background:#e9eef3;color:#23313f;width:100%;margin-top:8px}
+.status{margin-top:14px;padding:12px;border-radius:9px;background:#eef3f7;white-space:pre-wrap;overflow-wrap:anywhere}
+.status.error{background:#ffeded;color:#8a1c1c}.status.ok{background:#e8f7ed;color:#14532d}
+.config{margin-top:18px;border-top:1px solid #e0e6ec;padding-top:16px}
+details summary{cursor:pointer;font-weight:650;margin-bottom:12px}
+.preview{font-size:.9rem;color:#344354;background:#f7f9fb;padding:12px;border-radius:9px;margin-top:12px}
+@media(max-width:560px){body{padding:12px}.card{padding:16px}.grid{grid-template-columns:1fr;gap:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="card">
+    <h1>PTCHU Europa 2027</h1>
+    <p class="sub">Formulario de registro de tickets QR</p>
+    <div class="notice"><strong>Modo de preparación.</strong> No se ha subido ningún archivo ni insertado ningún registro. El guardado solo ocurre cuando se configura Supabase, hay sesión autenticada y se pulsa “Subir y guardar ticket”.</div>
+
+    <form id="ticketForm">
+      <div class="grid">
+        <div class="field"><label for="fecha">Fecha</label><input id="fecha" name="fecha" type="date" value="2027-03-20" required></div>
+        <div class="field"><label for="hora">Hora local</label><input id="hora" name="hora" type="time" value="09:00" required></div>
+        <div class="field"><label for="ciudad">Ciudad (código)</label><input id="ciudad" name="ciudad" value="ATE" maxlength="12" required></div>
+        <div class="field"><label for="evento">Evento (código)</label><input id="evento" name="evento" value="ACR" maxlength="20" required></div>
+      </div>
+
+      <div class="field">
+        <label for="qr1">Imagen QR1 <span aria-label="obligatorio">*</span></label>
+        <div class="filebox"><input id="qr1" name="qr1" type="file" accept="image/jpeg,image/png,image/webp" required>
+        <small>Selecciona la imagen original del ticket. Formatos: JPEG, PNG o WebP. Máximo recomendado: 10 MB.</small></div>
+      </div>
+      <div class="field">
+        <label for="qr2">Imagen QR2 (opcional)</label>
+        <div class="filebox"><input id="qr2" name="qr2" type="file" accept="image/jpeg,image/png,image/webp">
+        <small>Déjalo vacío si el ticket solo tiene un código.</small></div>
+      </div>
+
+      <div class="preview" id="preview">Datos preparados: 20/03/2027 · ATE · ACR · 09:00. QR1 pendiente; QR2 opcional.</div>
+      <button class="primary" id="saveBtn" type="submit">Subir y guardar ticket</button>
+      <button class="secondary" id="previewBtn" type="button">Validar formulario sin subir ni guardar</button>
+      <div id="status" class="status" role="status" aria-live="polite">Pendiente de configuración de Supabase. No se realizarán operaciones.</div>
+    </form>
+
+    <div class="config">
+      <details>
+        <summary>Configuración de Supabase</summary>
+        <p><small>Introduce la URL del proyecto y la clave publicable (anon/publishable). No uses nunca una service_role key en este archivo. Requiere que el usuario haya iniciado sesión y que las políticas RLS permitan la operación.</small></p>
+        <div class="field"><label for="supabaseUrl">Project URL</label><input id="supabaseUrl" type="url" placeholder="https://TU-PROYECTO.supabase.co" autocomplete="url"></div>
+        <div class="field"><label for="supabaseKey">Publishable / anon key</label><input id="supabaseKey" type="password" placeholder="sb_publishable_… o clave anon" autocomplete="off"></div>
+        <button class="secondary" type="button" id="connectBtn">Inicializar conexión</button>
+        <small>La conexión solo inicializa el cliente. No sube archivos ni guarda tickets.</small>
+      </details>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  let supabaseClient = null;
+  const BUCKET = 'ptchu-tickets';
+  const TABLE = 'ptchu_tickets';
+  const MAX_BYTES = 10 * 1024 * 1024;
+  const allowedTypes = new Set(['image/jpeg','image/png','image/webp']);
+
+  function setStatus(message, kind='') {
+    const el = $('status');
+    el.textContent = message;
+    el.className = 'status' + (kind ? ' ' + kind : '');
+  }
+  function getData() {
+    return {
+      fecha: $('fecha').value,
+      ciudad: $('ciudad').value.trim().toUpperCase(),
+      evento: $('evento').value.trim().toUpperCase(),
+      hora: $('hora').value,
+      qr1: $('qr1').files[0] || null,
+      qr2: $('qr2').files[0] || null
+    };
+  }
+  function validateFile(file, label, required) {
+    if (!file) {
+      if (required) throw new Error(label + ': selecciona una imagen antes de guardar.');
+      return;
+    }
+    if (!allowedTypes.has(file.type)) throw new Error(label + ': usa JPEG, PNG o WebP.');
+    if (file.size > MAX_BYTES) throw new Error(label + ': el archivo supera 10 MB.');
+  }
+  function validateForm(requireQr1=true) {
+    const d = getData();
+    if (!d.fecha || !d.ciudad || !d.evento || !d.hora) throw new Error('Completa fecha, ciudad, evento y hora.');
+    validateFile(d.qr1, 'QR1', requireQr1);
+    validateFile(d.qr2, 'QR2', false);
+    return d;
+  }
+  function updatePreview() {
+    const d = getData();
+    $('preview').textContent =
+      `Datos: ${d.fecha || 'sin fecha'} · ${d.ciudad || 'sin ciudad'} · ${d.evento || 'sin evento'} · ${d.hora || 'sin hora'}. ` +
+      `QR1: ${d.qr1 ? d.qr1.name : 'pendiente'}; QR2: ${d.qr2 ? d.qr2.name : 'opcional no seleccionado'}.`;
+  }
+  ['fecha','hora','ciudad','evento','qr1','qr2'].forEach(id => $(id).addEventListener('change', updatePreview));
+  ['ciudad','evento'].forEach(id => $(id).addEventListener('input', updatePreview));
+
+  $('previewBtn').addEventListener('click', () => {
+    try {
+      const d = validateForm(false);
+      setStatus('Validación local correcta. No se subió ningún archivo ni se insertó ningún registro.\\n' +
+        `Fecha: ${d.fecha}\\nCiudad: ${d.ciudad}\\nEvento: ${d.evento}\\nHora: ${d.hora}\\n` +
+        `QR1: ${d.qr1 ? d.qr1.name : 'sin seleccionar'}\\nQR2: ${d.qr2 ? d.qr2.name : 'opcional sin seleccionar'}`, 'ok');
+    } catch (e) { setStatus(e.message, 'error'); }
+  });
+
+  $('connectBtn').addEventListener('click', () => {
+    const url = $('supabaseUrl').value.trim();
+    const key = $('supabaseKey').value.trim();
+    if (!window.supabase?.createClient) return setStatus('No se pudo cargar supabase-js. Comprueba la conexión a Internet y vuelve a abrir el archivo.', 'error');
+    if (!url || !key) return setStatus('Introduce Project URL y publishable/anon key.', 'error');
+    try {
+      supabaseClient = window.supabase.createClient(url, key);
+      setStatus('Cliente inicializado. Aún no se ha subido ni guardado nada. Antes de guardar, inicia sesión en la app o añade aquí el flujo de autenticación que utiliza tu proyecto.', 'ok');
+    } catch (e) { setStatus('No se pudo inicializar: ' + e.message, 'error'); }
+  });
+
+  async function uploadOne(file, label) {
+    const safeName = file.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-100);
+    const path = `${$('fecha').value}/${$('ciudad').value.trim().toUpperCase()}/${$('evento').value.trim().toUpperCase()}/${crypto.randomUUID()}_${label}_${safeName}`;
+    const { error } = await supabaseClient.storage.from(BUCKET).upload(path, file, {
+      cacheControl: '3600', upsert: false, contentType: file.type
+    });
+    if (error) throw new Error(`Error al subir ${label}: ${error.message}`);
+    return path;
+  }
+
+  $('ticketForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!supabaseClient) return setStatus('Primero configura Supabase. No se ha subido ni guardado nada.', 'error');
+    let d;
+    try { d = validateForm(true); }
+    catch (e) { return setStatus(e.message, 'error'); }
+
+    $('saveBtn').disabled = true;
+    let path1 = null, path2 = null;
+    try {
+      const { data: authData, error: authError } = await supabaseClient.auth.getUser();
+      if (authError || !authData?.user) throw new Error('Debes iniciar sesión con un usuario autenticado antes de guardar.');
+      path1 = await uploadOne(d.qr1, 'QR1');
+      if (d.qr2) path2 = await uploadOne(d.qr2, 'QR2');
+
+      const record = {
+        fecha: d.fecha,
+        ciudad: d.ciudad,
+        evento: d.evento,
+        hora: d.hora,
+        qr1_path: path1,
+        qr2_path: path2
+      };
+      const { error: insertError } = await supabaseClient.from(TABLE).insert(record);
+      if (insertError) {
+        // Best-effort cleanup so failed DB insert doesn't leave orphaned files.
+        const paths = [path1, path2].filter(Boolean);
+        if (paths.length) await supabaseClient.storage.from(BUCKET).remove(paths);
+        throw new Error('No se insertó el registro: ' + insertError.message + '. Se intentó limpiar los archivos subidos.');
+      }
+      setStatus('Ticket guardado correctamente.\\nRutas registradas:\\nQR1: ' + path1 + '\\nQR2: ' + (path2 || 'sin archivo'), 'ok');
+    } catch (e) {
+      setStatus(e.message || String(e), 'error');
+    } finally {
+      $('saveBtn').disabled = false;
+    }
+  });
+
+  updatePreview();
+})();
+</script>
+</body>
+</html>
