@@ -1,0 +1,506 @@
+<!-- PTCHU: VUELOS DEFINIDO + HOTELES CHIN/CHOUT + SINCRONIZACION -->
+<!-- PTCHU FINAL DATE FIX 2026-10-04 -->
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0f172a"><title>PTCHU · Europa 2027</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>
+*{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 13px;font-weight:700}.primary{background:#2563eb;color:#fff}.light{background:#e2e8f0;color:#334155}.dark{background:#0f172a;color:#fff}.hidden{display:none!important}#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}.loginbox,.card,.modalbox{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 20px #00000012}.loginbox{width:min(480px,100%)}.loginbox h1{margin:0 0 8px}.loginbox p,.muted,.note{color:#64748b;font-size:14px}.loginbox label{display:block;margin-top:12px;font-size:12px;font-weight:800}.loginbox input,.grid input{width:100%;padding:10px;margin-top:4px;border:1px solid #cbd5e1;border-radius:9px;font-size:15px}.login-actions,.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.note{margin-top:12px;line-height:1.45}header{background:#0f172a;color:#fff;padding:16px;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:21px}header p{margin:4px 0;color:#cbd5e1;font-size:13px}.userline{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:12px;color:#cbd5e1}.userline button{padding:6px 9px;background:#334155;color:#fff}.status{display:inline-block;margin-top:8px;padding:5px 9px;border-radius:999px;font-size:12px;background:#334155}.status.ok{background:#166534}.status.err{background:#991b1b}nav{display:flex;overflow:auto;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:82px;z-index:4}nav button{background:#fff;color:#64748b;white-space:nowrap}nav button.active{color:#2563eb;border-bottom:3px solid #2563eb}main{padding:14px;max-width:1500px;margin:auto}.screen{display:none}.screen.active{display:block}.card{margin-bottom:14px}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.kpi{background:#f8fafc;border-radius:10px;padding:12px}.kpi b{font-size:22px;display:block}.tablewrap{overflow:auto;border-radius:12px}table{border-collapse:collapse;min-width:1120px;width:100%}th,td{padding:10px 8px;text-align:center;border:2px solid white;font-size:13px}th{font-size:12px}.actions{background:#f8fafc!important;min-width:92px}.small{padding:7px 8px;margin:2px}.edit{background:#dbeafe}.delete{background:#fee2e2}.empty{text-align:center;color:#64748b;padding:25px}.modal{display:none;position:fixed;inset:0;background:#0009;z-index:20;padding:14px;align-items:center;justify-content:center}.modal.open{display:flex}.modalbox{width:min(680px,100%);max-height:92vh;overflow:auto}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}@media(max-width:650px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+</style>
+<style id="ptchu-hotel-columns-v3">
+#hotelTable{min-width:1120px;width:100%;table-layout:fixed}
+#hotelTable th,#hotelTable td{white-space:normal;overflow-wrap:normal;word-break:normal}
+#hotelTable th{font-weight:800}
+#hotelTable th:nth-child(1),#hotelTable td:nth-child(1){width:95px}
+#hotelTable th:nth-child(2),#hotelTable td:nth-child(2){width:170px}
+#hotelTable th:nth-child(3),#hotelTable td:nth-child(3){width:220px}
+#hotelTable th:nth-child(4),#hotelTable td:nth-child(4),
+#hotelTable th:nth-child(5),#hotelTable td:nth-child(5){
+  width:105px;min-width:105px;white-space:nowrap !important;
+  overflow-wrap:normal !important;word-break:normal !important;
+  text-align:center;
+}
+#hotelTable th:nth-child(6),#hotelTable td:nth-child(6){width:82px;text-align:center}
+#hotelTable th:nth-child(7),#hotelTable td:nth-child(7){width:78px;text-align:center}
+#hotelTable th:nth-child(8),#hotelTable td:nth-child(8){width:105px}
+#hotelTable th:nth-child(9),#hotelTable td:nth-child(9){width:92px;text-align:center;white-space:nowrap}
+</style>
+
+<script id="ptchu-country-flags">
+function countryFlag(code){
+  const c=(code||'').toUpperCase();
+  const m={
+    GUA:'🇬🇹', GUATEMALA:'🇬🇹',
+    IAD:'🇺🇸', LGA:'🇺🇸', JFK:'🇺🇸', 'NEW YORK':'🇺🇸',
+    LHR:'🇬🇧', LIS:'🇵🇹', MAD:'🇪🇸', FCO:'🇮🇹',
+    IST:'🇹🇷', ATH:'🇬🇷', CDG:'🇫🇷', PRG:'🇨🇿'
+  };
+  return m[c]||'';
+}
+function flagAirport(code){
+  return countryFlag(code)+' '+code;
+}
+</script>
+
+
+<style id="ptchu-hotels-final-css">
+.hotels-table th,.hotels-table td{overflow-wrap:normal;word-break:normal;hyphens:none;white-space:normal}
+.hotels-table .hotel-actions{white-space:nowrap;text-align:center}
+.hotels-table .hotel-nights,.hotels-table .hotel-total,.hotels-table .hotel-date{text-align:center}
+.hotels-table .hotel-city{white-space:nowrap}
+</style>
+
+
+<style id="ptchu-hotel-dates-v2">
+.hotels-table .hotel-date,
+.hotels-table .hotel-date input,
+.hotels-table td:nth-child(4),
+.hotels-table td:nth-child(5),
+.hotels-table th:nth-child(4),
+.hotels-table th:nth-child(5){
+  white-space:nowrap !important;
+  overflow-wrap:normal !important;
+  word-break:normal !important;
+}
+</style>
+
+
+<script id="ptchu-hotels-cloud-v2">
+window.PTCHU_HOTELS_CLOUD = {
+  enabled: true,
+  table: "hotels",
+  note: "Hotels require a public.hotels table and RLS policies in Supabase."
+};
+</script>
+
+
+<script id="ptchu-hotels-supabase-schema">
+/*
+ PTCHU HOTELES - SUPABASE SETUP
+ Ejecutar una sola vez en Supabase SQL Editor:
+
+ create table if not exists public.hotels (
+   id bigint generated by default as identity primary key,
+   user_id uuid not null references auth.users(id) on delete cascade,
+   city text not null,
+   hotel text not null,
+   address text,
+   check_in date not null,
+   check_out date not null,
+   nights integer not null default 0,
+   total numeric,
+   payment_status text,
+   created_at timestamptz not null default now()
+ );
+
+ alter table public.hotels enable row level security;
+
+ create policy "users can select their own hotels"
+ on public.hotels for select to authenticated
+ using (auth.uid() = user_id);
+
+ create policy "users can insert their own hotels"
+ on public.hotels for insert to authenticated
+ with check (auth.uid() = user_id);
+
+ create policy "users can update their own hotels"
+ on public.hotels for update to authenticated
+ using (auth.uid() = user_id)
+ with check (auth.uid() = user_id);
+
+ create policy "users can delete their own hotels"
+ on public.hotels for delete to authenticated
+ using (auth.uid() = user_id);
+
+ grant usage on schema public to authenticated;
+ grant select, insert, update, delete on table public.hotels to authenticated;
+ grant usage, select on sequence public.hotels_id_seq to authenticated;
+*/
+window.PTCHU_HOTELS_CLOUD_SETUP = {
+  table: "hotels",
+  fields: ["city","hotel","address","check_in","check_out","nights","total","payment_status"],
+  syncReadyAfterSql: true
+};
+</script>
+
+
+<style id="ptchu-qr-module-css">
+.code-connection{border:1px solid #dbe3ed;border-radius:12px;background:#f8fafc;padding:12px;margin-top:14px}.code-connection input{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;margin-top:8px}.code-connection-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.code-filters{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.code-filters input{padding:10px;border:1px solid #cbd5e1;border-radius:9px;min-width:180px;flex:1}.code-event-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}.code-event{border:1px solid #e2e8f0;border-radius:13px;padding:14px;background:#fff}.code-event h3{margin:0 0 5px;font-size:17px}.code-event .meta{font-size:13px;color:#64748b;margin-bottom:10px}.code-event .code-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.code-pill{display:inline-block;background:#eff6ff;color:#1d4ed8;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800}.code-form-grid label{display:block;font-size:13px;font-weight:700;margin-bottom:4px}.code-form-grid input,.code-form-grid select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;background:white}.code-form-grid .wide{grid-column:1/-1}.code-viewer{position:fixed;inset:0;z-index:100;background:#050505;color:white;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom)}.code-viewer.hidden{display:none!important}.code-viewer-top,.code-viewer-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0}.code-viewer-content{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}.code-viewer-content img{display:block;max-width:100%;max-height:calc(100% - 38px);object-fit:contain;background:white;padding:10px;border-radius:6px}.code-viewer-bottom span{font-size:13px}.code-viewer-top span{font-weight:800}.code-event .muted{line-height:1.4}@media(max-width:650px){.code-form-grid .wide{grid-column:auto}.code-filters input{min-width:100%}.code-viewer-content img{max-width:100%;max-height:80vh}}
+</style>
+</head><body>
+<div id="login"><div class="loginbox"><h1>PTCHU · EUROPA 2027</h1><p>Inicia sesión para que tus vuelos se guarden en la nube y aparezcan en tus otros dispositivos.</p><label>Correo electrónico<input id="email" type="email" autocomplete="email" placeholder="tu correo"></label><label>Contraseña<input id="password" type="password" autocomplete="current-password" placeholder="mínimo 6 caracteres"></label><div class="login-actions"><button class="primary" id="loginBtn">Iniciar sesión</button><button class="light" id="signupBtn">Crear cuenta</button></div><div id="loginMsg" class="note"></div></div></div>
+<div id="app" class="hidden"><header><h1>PTCHU · EUROPA 2027</h1><p>10–27 marzo 2027 · 2 pasajeros · Carry-on</p><div class="userline"><span id="userEmail"></span><button id="logout">Cerrar sesión</button></div><span id="cloudStatus" class="status">Conectando...</span></header>
+<nav><button class="tab active" data-screen="vuelos">✈️ Vuelos</button><button class="tab" data-screen="hoteles">🏨 Hoteles</button><button class="tab" data-screen="trenes">🚆 Trenes</button><button class="tab" data-screen="transporte">🚇 Transporte</button><button class="tab" data-screen="entradas">🎟️ QR / Barras</button><button class="tab" data-screen="gastos">💶 Gastos</button></nav>
+<main><section id="vuelos" class="screen active"><div class="card"><h2>Matriz de vuelos</h2><div class="muted">Los cambios se guardan en Supabase y se sincronizan entre dispositivos.</div><div class="kpis"><div class="kpi"><span class="muted">Vuelos</span><b id="count">0</b></div><div class="kpi"><span class="muted">Primer vuelo</span><b>08/03</b></div><div class="kpi"><span class="muted">Último tramo</span><b id="lastLeg">—</b></div></div><div class="toolbar"><button class="primary" id="add">＋ Agregar vuelo</button><button class="dark" id="save">☁️ Sincronizar</button><button class="light" id="reset">↺ Restaurar matriz</button></div><div class="tablewrap"><table><thead><tr><th style="background:#dbeafe">Fecha</th><th style="background:#dcfce7">Aerolínea</th><th style="background:#fef3c7">Reservación</th><th style="background:#ffedd5">Origen</th><th style="background:#fee2e2">Hora</th><th style="background:#ede9fe">Destino</th><th style="background:#f3e8d3">Hora</th><th style="background:#e5e7eb"># Vuelo</th><th class="actions">Acciones</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
+
+<section id="hoteles" class="screen">
+  <div class="card">
+    <h2>Matriz de hoteles</h2>
+    <div class="muted">Los datos de hoteles se ingresarán después de creada la matriz.</div>
+    <div class="toolbar">
+      <button class="primary" id="addHotel">＋ Agregar hotel</button>
+      <button class="dark" id="syncHotels">☁️ Sincronizar</button>
+    </div>
+    <div class="tablewrap">
+      <table id="hotelTable">
+        <thead><tr>
+          <th style="background:#dbeafe"><b>Ciudad</b></th>
+          <th style="background:#dcfce7"><b>Hotel</b></th>
+          <th style="background:#fef3c7"><b>Dirección</b></th>
+          <th style="background:#ffedd5"><b>ChIn</b></th>
+          <th style="background:#fee2e2"><b>ChOut</b></th>
+          <th style="background:#ede9fe"><b>No. Noches</b></th>
+          <th style="background:#f3e8d3"><b>Total $</b></th>
+          <th style="background:#e5e7eb"><b>Status Pago</b></th>
+          <th class="actions"><b>Acciones</b></th>
+        </tr></thead>
+        <tbody id="hotelTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section><section id="trenes" class="screen"><div class="card"><h2>Trenes</h2><div class="empty">Módulo preparado para agregar información de trenes.</div></div></section><section id="transporte" class="screen"><div class="card"><h2>Transporte</h2><div class="empty">Módulo preparado para agregar información de transporte.</div></div></section><section id="entradas" class="screen">
+  <div class="card">
+    <h2>Inventario QR / Barras</h2>
+    <div class="muted">Todos los eventos son para 2 personas. Cada evento puede tener 1 código compartido o 2 códigos individuales. Se conserva la imagen original.</div>
+    <div class="code-connection">
+      <b>Conexión independiente del inventario QR</b>
+      <div class="muted">Este módulo conserva su propio proyecto Supabase y su propio acceso, separado de Vuelos y Hoteles.</div>
+      <input id="qrProjectUrl" type="url" value="https://ogexcjnhvbhrhlekyhl.supabase.co" aria-label="URL del proyecto QR">
+      <input id="qrPublishableKey" type="password" placeholder="Clave pública Publishable del proyecto QR" aria-label="Clave pública QR">
+      <div class="code-connection-grid"><input id="qrEmail" type="email" placeholder="Correo del usuario QR" autocomplete="username"><input id="qrPassword" type="password" placeholder="Contraseña del usuario QR" autocomplete="current-password"></div>
+      <div class="toolbar"><button class="light" id="qrConnect">Conectar QR</button><button class="primary" id="qrLogin">Iniciar sesión QR</button><button class="light" id="qrSignup">Crear usuario QR</button><button class="light" id="qrLogout">Cerrar sesión QR</button></div>
+      <div id="qrConnectionStatus" class="muted">Configura la conexión independiente del inventario QR.</div>
+    </div>
+    <div class="toolbar">
+      <button class="primary" id="addCodeEvent">＋ Agregar evento</button>
+      <button class="dark" id="syncCodeEvents">☁️ Sincronizar</button>
+    </div>
+    <div class="code-filters">
+      <input id="codeSearch" type="search" placeholder="Buscar ciudad o evento">
+      <input id="codeDateFilter" type="date" aria-label="Filtrar por fecha">
+      <button class="light" id="clearCodeFilters">Limpiar</button>
+    </div>
+    <div id="codeStatus" class="muted" role="status">Los eventos QR aparecerán aquí.</div>
+    <div id="codeEventList" class="code-event-list"></div>
+  </div>
+</section><section id="gastos" class="screen"><div class="card"><h2>Gastos</h2><div class="empty">Módulo preparado para agregar información de gastos.</div></div></section></main></div>
+
+<div id="hotelModal" class="modal">
+  <div class="modalbox">
+    <h2 id="hotelMtitle">Agregar hotel</h2>
+    <div class="grid" id="hotelFields"></div>
+    <div class="modal-actions">
+      <button class="light" id="hotelCancel">Cancelar</button>
+      <button class="primary" id="hotelConfirm">Guardar hotel</button>
+    </div>
+  </div>
+</div>
+<div id="codeEventModal" class="modal"><div class="modalbox">
+  <h2>Agregar evento</h2>
+  <div class="muted">Personas: <b>2 (fijo)</b></div>
+  <div class="grid code-form-grid">
+    <div><label>Ciudad *</label><input id="ceCity" maxlength="100" placeholder="Ej. Madrid"></div>
+    <div><label>Fecha *</label><input id="ceDate" type="date"></div>
+    <div class="wide"><label>Evento *</label><input id="ceName" maxlength="180" placeholder="Ej. Turibus Madrid"></div>
+    <div><label>Cantidad de códigos *</label><select id="ceCount"><option value="1">1 código para las 2 personas</option><option value="2">2 códigos, uno por persona</option></select></div>
+    <div><label>Tipo de código 1</label><select id="ceType1"><option value="QR">QR</option><option value="BARRAS">Código de barras</option></select></div>
+    <div class="wide"><label>Imagen original del código 1 *</label><input id="ceFile1" type="file" accept="image/*"></div>
+    <div id="ceSecondFields" class="wide hidden">
+      <div class="grid">
+        <div><label>Tipo de código 2</label><select id="ceType2"><option value="QR">QR</option><option value="BARRAS">Código de barras</option></select></div>
+        <div><label>Imagen original del código 2 *</label><input id="ceFile2" type="file" accept="image/*"></div>
+      </div>
+    </div>
+  </div>
+  <div class="note">Usa la imagen original descargada o fotografiada del ticket. No recortes ni alteres el código antes de subirlo.</div>
+  <div class="modal-actions"><button class="light" id="codeEventCancel">Cancelar</button><button class="primary" id="codeEventSave">Guardar evento</button></div>
+</div></div>
+<div id="codeViewer" class="code-viewer hidden" role="dialog" aria-modal="true" aria-label="Código de acceso">
+  <div class="code-viewer-top"><span id="codeViewerTitle">Código</span><button class="light" id="codeViewerClose">✕ Cerrar</button></div>
+  <div class="code-viewer-content"><img id="codeViewerImage" alt="Código original para escanear"><div id="codeViewerCaption"></div></div>
+  <div class="code-viewer-bottom"><button class="light" id="codeViewerPrev">← Anterior</button><span id="codeViewerCounter"></span><button class="primary" id="codeViewerNext">Siguiente →</button></div>
+</div>
+<div id="modal" class="modal"><div class="modalbox"><h2 id="mtitle">Vuelo</h2><div class="grid" id="fields"></div><div class="modal-actions"><button class="light" id="cancel">Cancelar</button><button class="primary" id="confirm">Guardar vuelo</button></div></div></div>
+<script>
+const SUPABASE_URL='https://usqqsseoqdxqqapbtqsi.supabase.co';const SUPABASE_PUBLISHABLE_KEY='sb_publishable_VG4BsTNtQbJu-ER89xLUJQ_7INq5RFL';const sb=supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+const H=['Fecha','Aerolínea','Reservación','Origen','Hora','Destino','Hora','# Vuelo'];const INITIAL=[['08/03/27','United','E4FHZB / HGNKRB','GUA','01:05/12:35','IAD/LGA','13:49','UA1572 / UA3698'],['09/03/27','JetBlue/British Airways','NTMCGA / BKXNJK','JFK','09:14/11:50','LHR/LIS','14:50','B6007/B66300'],['12/03/27','TAP Air Portugal','X8OZ7G','LIS','11:45','MAD','14:05','TP1014'],['15/03/27','ITA Airways','CSV4CI','MAD','11:40','FCO','14:00','AZ061'],['17/03/27','Turkish Airlines','TWBHGL / T6JGFN','FCO','11:15','IST','15:55','TK1862'],['19/03/27','Aegean','Z4ULPB / Z52U3R','IST','22:00','ATH','22:30','A3995'],['21/03/27','Aegean','Y7RYML','ATH','13:20','CDG','15:55','A3612'],['23/03/27','','','CDG','','PRG','',''],['26/03/27','','','PRG','','NEW YORK','',''],['27/03/27','','','','','','','']];
+let rows=[],editId=null,channel=null;const colors=['#dbeafe','#dcfce7','#fef3c7','#ffedd5','#fee2e2','#ede9fe','#f3e8d3','#e5e7eb'];
+function status(t,ok=false,err=false){const e=document.getElementById('cloudStatus');e.textContent=t;e.className='status'+(ok?' ok':'')+(err?' err':'')}function showLogin(msg=''){document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');document.getElementById('loginMsg').textContent=msg}
+function toDbDate(v){if(!v)return null;const m=v.match(/^(\d{2})\/(\d{2})\/(\d{2})$/);if(m)return '20'+m[3]+'-'+m[2]+'-'+m[1];return v}function displayDate(v){if(!v)return '';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1].slice(2):v}const AIRPORT_FLAGS={GUA:'🇬🇹',IAD:'🇺🇸',LGA:'🇺🇸',JFK:'🇺🇸',LHR:'🇬🇧',LIS:'🇵🇹',MAD:'🇪🇸',FCO:'🇮🇹',IST:'🇹🇷',ATH:'🇬🇷',CDG:'🇫🇷',PRG:'🇨🇿','NEW YORK':'🇺🇸'};const CITY_FLAGS={'lisboa':'🇵🇹','madrid':'🇪🇸','roma':'🇮🇹','estambul':'🇹🇷','istanbul':'🇹🇷','atenas':'🇬🇷','parís':'🇫🇷','paris':'🇫🇷','praga':'🇨🇿','prague':'🇨🇿','nueva york':'🇺🇸','new york':'🇺🇸'};function flaggedRoute(v){if(!v)return '—';return String(v).split('/').map(x=>{const k=x.trim().toUpperCase();return (AIRPORT_FLAGS[k]||'')+(AIRPORT_FLAGS[k]?' ':'')+x.trim()}).join(' / ')}function flaggedCity(v){if(!v)return '—';const f=CITY_FLAGS[String(v).trim().toLowerCase()];return (f?f+' ':'')+v}
+function updateLastLeg(){
+  const el=document.getElementById('lastLeg');
+  if(!el)return;
+  if(!rows.length){el.textContent='—';return}
+  const latest=rows.reduce((max,r)=>{
+    const d=String(r.flight_date||'');
+    return d>String(max||'')?d:max;
+  },'');
+  el.textContent=displayDate(latest)||'—';
+}
+
+function render(){const tb=document.getElementById('tbody');tb.innerHTML='';rows.forEach((r,i)=>{const tr=document.createElement('tr');['flight_date','airline','reservation','origin','departure_time','destination','arrival_time','flight_number'].forEach((k,j)=>{const td=document.createElement('td');td.style.background=colors[j];td.textContent=k==='flight_date'?displayDate(r[k]):(k==='origin'||k==='destination'?flaggedRoute(r[k]):(r[k]||'—'));tr.appendChild(td)});const a=document.createElement('td');a.className='actions';a.innerHTML='<button class="small edit" data-id="'+r.id+'">✏️</button><button class="small delete" data-id="'+r.id+'">🗑️</button>';tr.appendChild(a);tb.appendChild(tr)});document.getElementById('count').textContent=rows.length;updateLastLeg()}
+function openForm(r){editId=r?.id||null;document.getElementById('mtitle').textContent=r?'Editar vuelo':'Agregar vuelo';const vals=r?[displayDate(r.flight_date),r.airline,r.reservation,r.origin,r.departure_time,r.destination,r.arrival_time,r.flight_number]:Array(8).fill('');const box=document.getElementById('fields');box.innerHTML='';H.forEach((h,i)=>{const d=document.createElement('div');d.innerHTML='<label>'+h+'</label><input id="f'+i+'">';d.querySelector('input').value=vals[i]||'';box.appendChild(d)});document.getElementById('modal').classList.add('open')}function closeForm(){document.getElementById('modal').classList.remove('open')}
+async function loadFlights(){status('Cargando nube...');const {data,error}=await sb.from('flights').select('*').order('flight_date',{ascending:true}).order('created_at',{ascending:true});if(error){status('Error de base de datos',false,true);alert('No se pudo cargar la matriz: '+error.message);return}rows=data||[];if(rows.length===0)await seedInitial();else{render();status('Nube sincronizada',true)}}
+async function seedInitial(){const user=(await sb.auth.getUser()).data.user;if(!user)return;const payload=INITIAL.map(r=>({user_id:user.id,flight_date:toDbDate(r[0]),airline:r[1],reservation:r[2],origin:r[3],departure_time:r[4],destination:r[5],arrival_time:r[6],flight_number:r[7]}));const {data,error}=await sb.from('flights').insert(payload).select();if(error){status('Error al crear matriz',false,true);alert('No se pudo crear la matriz inicial: '+error.message);return}rows=data||[];render();status('Matriz inicial guardada en la nube',true)}
+async function saveRow(){const vals=H.map((_,i)=>document.getElementById('f'+i).value.trim());const user=(await sb.auth.getUser()).data.user;if(!user)return;const obj={flight_date:toDbDate(vals[0]),airline:vals[1],reservation:vals[2],origin:vals[3],departure_time:vals[4],destination:vals[5],arrival_time:vals[6],flight_number:vals[7]};if(editId){const {error}=await sb.from('flights').update(obj).eq('id',editId).eq('user_id',user.id);if(error){alert('No se pudo guardar: '+error.message);return}}else{obj.user_id=user.id;const {error}=await sb.from('flights').insert(obj);if(error){alert('No se pudo guardar: '+error.message);return}}closeForm();await loadFlights()}
+async function deleteRow(id){if(!confirm('¿Eliminar este vuelo de la nube?'))return;const {error}=await sb.from('flights').delete().eq('id',id);if(error){alert('No se pudo eliminar: '+error.message);return}await loadFlights()}async function resetInitial(){if(!confirm('¿Restaurar la matriz original? Esto reemplazará los vuelos de EUROPA-2027 en la nube.'))return;const user=(await sb.auth.getUser()).data.user;if(!user)return;const d=await sb.from('flights').delete().eq('user_id',user.id);if(d.error){alert('No se pudo limpiar la matriz: '+d.error.message);return}await seedInitial()}
+async function initUser(user){document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('userEmail').textContent=user.email||'';await loadFlights();await loadHotels();await loadCodeEvents();if(channel)await sb.removeChannel(channel);if(hotelChannel)await sb.removeChannel(hotelChannel);channel=sb.channel('flights-sync').on('postgres_changes',{event:'*',schema:'public',table:'flights',filter:'user_id=eq.'+user.id},()=>loadFlights()).subscribe();hotelChannel=sb.channel('hotels-sync').on('postgres_changes',{event:'*',schema:'public',table:'hotels',filter:'user_id=eq.'+user.id},()=>loadHotels()).subscribe()}
+
+document.getElementById('loginBtn').onclick=async()=>{try{const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value;if(!email||!password){showLogin('Escribe tu correo y contraseña.');return}const {data,error}=await sb.auth.signInWithPassword({email,password});if(error){showLogin('No se pudo iniciar sesión: '+error.message);return}if(data.user)await initUser(data.user)}catch(e){showLogin('Error inesperado: '+(e.message||e))}};
+document.getElementById('signupBtn').onclick=async()=>{try{const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value;if(!email||!password){showLogin('Escribe tu correo y una contraseña.');return}if(password.length<6){showLogin('La contraseña debe tener al menos 6 caracteres.');return}showLogin('Creando cuenta...');const {data,error}=await sb.auth.signUp({email,password});if(error){showLogin('No se pudo crear la cuenta: '+error.message);return}if(data.session&&data.user){await initUser(data.user)}else{showLogin('Cuenta creada. Revisa tu correo para confirmar la cuenta y luego inicia sesión.')}}catch(e){showLogin('Error inesperado: '+(e.message||e))}};
+document.getElementById('logout').onclick=async()=>{closeCodeViewer();await sb.auth.signOut();if(channel)await sb.removeChannel(channel);if(hotelChannel)await sb.removeChannel(hotelChannel);showLogin('Sesión cerrada.')};document.getElementById('add').onclick=()=>openForm(null);document.getElementById('cancel').onclick=closeForm;document.getElementById('confirm').onclick=saveRow;document.getElementById('save').onclick=loadFlights;document.getElementById('reset').onclick=resetInitial;
+document.getElementById('tbody').onclick=e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.id;const r=rows.find(x=>String(x.id)===String(id));if(b.classList.contains('edit'))openForm(r);if(b.classList.contains('delete'))deleteRow(id)};document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(t.dataset.screen).classList.add('active')});
+
+const HOTEL_H=['Ciudad','Hotel','Dirección','ChIn','ChOut','No. Noches','Total $','Status Pago'];
+let hotels=[],hotelEditId=null,hotelChannel=null;
+
+function hotelDbDate(v){
+  if(!v)return null;
+  const m=String(v).match(/^(\d{2})\/(\d{2})\/(\d{2})$/);
+  return m?'20'+m[3]+'-'+m[2]+'-'+m[1]:v;
+}
+function hotelDisplayDate(v){
+  if(!v)return '';
+  const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m?m[3]+'/'+m[2]+'/'+m[1].slice(2):v;
+}
+function hotelFormDate(v){
+  if(!v)return '';
+  const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m?v:'';
+}
+function hotelStatus(msg,ok=false,err=false){
+  status(msg,ok,err);
+}
+function mapHotelFromDb(r){
+  return {
+    id:r.id,
+    Ciudad:r.city||'',
+    Hotel:r.hotel||'',
+    Dirección:r.address||'',
+    ChIn:r.check_in||'',
+    ChOut:r.check_out||'',
+    'No. Noches':r.nights==null?'':String(r.nights),
+    'Total $':r.total==null?'':String(r.total),
+    'Status Pago':r.payment_status||''
+  };
+}
+function hotelPayload(obj,userId){
+  return {
+    user_id:userId,
+    city:obj.Ciudad,
+    hotel:obj.Hotel,
+    address:obj.Dirección||null,
+    check_in:hotelDbDate(obj.ChIn),
+    check_out:hotelDbDate(obj.ChOut),
+    nights:Number(obj['No. Noches']||0),
+    total:obj['Total $']===''?null:Number(obj['Total $']),
+    payment_status:obj['Status Pago']||null
+  };
+}
+function renderHotels(){
+  const tb=document.getElementById('hotelTbody');
+  if(!tb)return;
+  tb.innerHTML='';
+  if(!hotels.length){
+    tb.innerHTML='<tr><td colspan="9" class="empty">No hay hoteles registrados</td></tr>';
+    return;
+  }
+  const hotelColors=['#dbeafe','#dcfce7','#fef3c7','#ffedd5','#fee2e2','#ede9fe','#f3e8d3','#e5e7eb'];
+  hotels.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    HOTEL_H.forEach((k,j)=>{
+      const td=document.createElement('td');
+      td.style.background=hotelColors[j];
+      td.textContent=k==='Ciudad'?flaggedCity(r[k]):
+        ((k==='ChIn'||k==='ChOut')?hotelDisplayDate(r[k]):(r[k]||'—'));
+      if(k==='ChIn'||k==='ChOut'){td.style.whiteSpace='nowrap';td.style.minWidth='105px';td.style.width='105px';}
+      if(k==='No. Noches'||k==='Total $')td.style.textAlign='center';
+      tr.appendChild(td);
+    });
+    const a=document.createElement('td');
+    a.className='actions';
+    a.innerHTML='<button class="small editHotel" data-id="'+r.id+'">✏️</button><button class="small deleteHotel" data-id="'+r.id+'">🗑️</button>';
+    tr.appendChild(a);
+    tb.appendChild(tr);
+  });
+}
+async function loadHotels(){
+  const user=(await sb.auth.getUser()).data.user;
+  if(!user)return;
+  const {data,error}=await sb.from('hotels').select('*').eq('user_id',user.id).order('check_in',{ascending:true}).order('created_at',{ascending:true});
+  if(error){
+    hotelStatus('Error Hoteles',false,true);
+    alert('No se pudieron cargar los hoteles: '+error.message);
+    return;
+  }
+  hotels=(data||[]).map(mapHotelFromDb);
+  renderHotels();
+  hotelStatus('Vuelos y Hoteles sincronizados',true);
+}
+function openHotelForm(id=null){
+  hotelEditId=id;
+  const r=id==null?{}:(hotels.find(x=>String(x.id)===String(id))||{});
+  document.getElementById('hotelMtitle').textContent=id==null?'Agregar hotel':'Editar hotel';
+  const box=document.getElementById('hotelFields');box.innerHTML='';
+  HOTEL_H.forEach((h,i)=>{
+    const d=document.createElement('div');
+    const type=(h==='ChIn'||h==='ChOut')?'date':(h==='No. Noches'||h==='Total $'?'number':'text');
+    d.innerHTML='<label>'+h+'</label><input id="hf'+i+'" type="'+type+'">';
+    const input=d.querySelector('input');
+    if(h==='ChIn'||h==='ChOut')input.value=hotelFormDate(r[h]);
+    else input.value=r[h]||'';
+    box.appendChild(d);
+  });
+  document.getElementById('hotelModal').classList.add('open');
+}
+function closeHotelForm(){document.getElementById('hotelModal').classList.remove('open')}
+async function saveHotel(){
+  const user=(await sb.auth.getUser()).data.user;
+  if(!user)return;
+  const obj={};
+  HOTEL_H.forEach((h,i)=>obj[h]=document.getElementById('hf'+i).value.trim());
+  if(!obj.Ciudad||!obj.Hotel||!obj.ChIn||!obj.ChOut){
+    alert('Completa Ciudad, Hotel, ChIn y ChOut.');
+    return;
+  }
+  const payload=hotelPayload(obj,user.id);
+  let error=null;
+  if(hotelEditId!=null){
+    const res=await sb.from('hotels').update(payload).eq('id',hotelEditId).eq('user_id',user.id);
+    error=res.error;
+  }else{
+    const res=await sb.from('hotels').insert(payload);
+    error=res.error;
+  }
+  if(error){
+    alert('No se pudo guardar el hotel: '+error.message);
+    return;
+  }
+  closeHotelForm();
+  await loadHotels();
+}
+async function deleteHotel(id){
+  if(!confirm('¿Eliminar este hotel de la nube?'))return;
+  const user=(await sb.auth.getUser()).data.user;
+  if(!user)return;
+  const {error}=await sb.from('hotels').delete().eq('id',id).eq('user_id',user.id);
+  if(error){
+    alert('No se pudo eliminar el hotel: '+error.message);
+    return;
+  }
+  await loadHotels();
+}
+document.getElementById('addHotel').onclick=()=>openHotelForm();
+document.getElementById('syncHotels').onclick=loadHotels;
+document.getElementById('hotelCancel').onclick=closeHotelForm;
+document.getElementById('hotelConfirm').onclick=saveHotel;
+document.getElementById('hotelTbody').onclick=e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const id=b.dataset.id;
+  if(b.classList.contains('editHotel'))openHotelForm(id);
+  if(b.classList.contains('deleteHotel'))deleteHotel(id);
+};
+
+
+// PTCHU QR / BARRAS: 2 pasajeros fijos; 1 código compartido o 2 individuales.
+const CODE_TABLE='event_codes', CODE_BUCKET='event-codes';
+let qrSb=null, qrUser=null, codeEvents=[], viewerItems=[], viewerIndex=0;
+const QR_CONFIG_KEY='entradasEuropa0327Config';
+const $code=id=>document.getElementById(id);
+function qrConnStatus(msg,isError=false){$code('qrConnectionStatus').textContent=msg;$code('qrConnectionStatus').style.color=isError?'#b91c1c':'#64748b'}
+async function connectQrProject(){
+  const url=$code('qrProjectUrl').value.trim().replace(/\/+$/,'');const key=$code('qrPublishableKey').value.trim();
+  if(!/^https:\/\/[a-zA-Z0-9-]+\.supabase\.co$/.test(url))throw new Error('La URL del proyecto QR no es válida.');
+  if(!key.startsWith('sb_publishable_')&&!key.startsWith('eyJ'))throw new Error('Introduce la clave pública Publishable del proyecto QR.');
+  qrSb=supabase.createClient(url,key);localStorage.setItem(QR_CONFIG_KEY,JSON.stringify({url,key}));
+  const {data,error}=await qrSb.auth.getSession();if(error)throw error;qrUser=data.session?.user||null;
+  qrConnStatus(qrUser?'Conectado al proyecto QR. Sesión recuperada: '+(qrUser.email||'usuario'):'Proyecto QR conectado. Inicia sesión con el usuario de ese proyecto.');
+  if(qrUser)await loadCodeEvents();
+}
+async function qrAuth(signup=false){if(!qrSb)throw new Error('Primero pulsa Conectar QR.');const email=$code('qrEmail').value.trim(),password=$code('qrPassword').value;if(!email||!password)throw new Error('Escribe correo y contraseña del proyecto QR.');const r=signup?await qrSb.auth.signUp({email,password}):await qrSb.auth.signInWithPassword({email,password});if(r.error)throw r.error;qrUser=r.data.user||null;if(signup&&!r.data.session){qrConnStatus('Usuario creado. Confirma el correo si Supabase lo solicita y luego inicia sesión.');return}qrConnStatus('Sesión QR iniciada: '+(qrUser?.email||'usuario'));await loadCodeEvents()}
+async function qrLogout(){if(!qrSb)return;const {error}=await qrSb.auth.signOut();if(error)throw error;qrUser=null;codeEvents=[];renderCodeEvents();qrConnStatus('Sesión del inventario QR cerrada. Vuelos permanece conectado.')}
+(function restoreQrConfig(){try{const c=JSON.parse(localStorage.getItem(QR_CONFIG_KEY)||'{}');if(c.url)$code('qrProjectUrl').value=c.url;if(c.key)$code('qrPublishableKey').value=c.key;if(c.url&&c.key)connectQrProject().catch(e=>qrConnStatus(e.message,true))}catch(e){qrConnStatus('Configura la conexión independiente del inventario QR.',true)}})();
+function codeStatus(msg,isError=false){const el=$code('codeStatus');if(el){el.textContent=msg;el.style.color=isError?'#b91c1c':'#64748b'}}
+function openCodeEventForm(){
+  ['ceCity','ceDate','ceName'].forEach(id=>$code(id).value='');
+  $code('ceCount').value='1';$code('ceType1').value='QR';$code('ceType2').value='QR';
+  $code('ceFile1').value='';$code('ceFile2').value='';$code('ceSecondFields').classList.add('hidden');
+  $code('codeEventModal').classList.add('open');
+}
+function closeCodeEventForm(){$code('codeEventModal').classList.remove('open')}
+$code('ceCount').addEventListener('change',()=>{$code('ceSecondFields').classList.toggle('hidden',$code('ceCount').value!=='2')});
+function safeText(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function codeDate(v){if(!v)return '';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1].slice(2):v}
+async function saveCodeEvent(){
+  const user=qrUser;if(!qrSb||!user){alert('Inicia sesión para guardar.');return}
+  const city=$code('ceCity').value.trim(),eventDate=$code('ceDate').value,eventName=$code('ceName').value.trim(),count=Number($code('ceCount').value);
+  const files=[$code('ceFile1').files[0],...(count===2?[$code('ceFile2').files[0]]:[])];
+  if(!city||!eventDate||!eventName){alert('Completa ciudad, fecha y evento.');return}
+  if(files.some(f=>!f)){alert('Selecciona la imagen original de cada código.');return}
+  if(files.some(f=>!f.type.startsWith('image/'))){alert('Solo se permiten imágenes de códigos QR o de barras.');return}
+  if(files.some(f=>f.size>12*1024*1024)){alert('Cada imagen debe pesar menos de 12 MB.');return}
+  const id=crypto.randomUUID(),paths=[];
+  $code('codeEventSave').disabled=true;$code('codeEventSave').textContent='Guardando...';
+  try{
+    for(let i=0;i<files.length;i++){
+      const f=files[i],ext=(f.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+      const path=user.id+'/'+id+'/codigo-'+(i+1)+'.'+ext;
+      const up=await qrSb.storage.from(CODE_BUCKET).upload(path,f,{upsert:false,contentType:f.type});
+      if(up.error)throw up.error;
+      paths.push(path);
+    }
+    const payload={id,user_id:user.id,city,event_date:eventDate,event_name:eventName,attendee_count:2,code_count:count,code1_type:$code('ceType1').value,code1_path:paths[0],code2_type:count===2?$code('ceType2').value:null,code2_path:count===2?paths[1]:null};
+    const ins=await qrSb.from(CODE_TABLE).insert(payload);
+    if(ins.error)throw ins.error;
+    closeCodeEventForm();await loadCodeEvents();codeStatus('Evento guardado correctamente.');
+  }catch(e){
+    for(const path of paths)await qrSb.storage.from(CODE_BUCKET).remove([path]);
+    alert('No se pudo guardar el evento: '+(e.message||e));
+  }finally{$code('codeEventSave').disabled=false;$code('codeEventSave').textContent='Guardar evento'}
+}
+async function loadCodeEvents(){
+  const user=qrUser;if(!qrSb||!user)return;
+  codeStatus('Cargando inventario...');
+  const {data,error}=await qrSb.from(CODE_TABLE).select('*').eq('user_id',user.id).order('event_date',{ascending:true}).order('created_at',{ascending:true});
+  if(error){codeStatus('Configura la tabla y el almacenamiento siguiendo el archivo SQL de instalación.',true);console.warn('QR inventory:',error.message);return}
+  codeEvents=data||[];renderCodeEvents();codeStatus(codeEvents.length+' evento(s) registrados.');
+}
+function renderCodeEvents(){
+  const list=$code('codeEventList');if(!list)return;list.innerHTML='';
+  const q=$code('codeSearch').value.trim().toLowerCase(),d=$code('codeDateFilter').value;
+  const filtered=codeEvents.filter(r=>(!q||(r.city+' '+r.event_name).toLowerCase().includes(q))&&(!d||r.event_date===d));
+  if(!filtered.length){list.innerHTML='<div class="empty">No hay eventos que coincidan con la búsqueda.</div>';return}
+  filtered.forEach(r=>{
+    const card=document.createElement('div');card.className='code-event';
+    const count=Number(r.code_count)||1;
+    card.innerHTML='<h3>'+safeText(r.event_name)+'</h3><div class="meta">'+safeText(r.city)+' · '+codeDate(r.event_date)+'</div><span class="code-pill">2 PERSONAS</span> <span class="code-pill">'+count+' código(s)</span><div class="code-actions">'+Array.from({length:count},(_,i)=>'<button class="primary small" data-show-code="'+safeText(r.id)+'" data-index="'+i+'">MOSTRAR '+('CÓDIGO '+(i+1))+'</button>').join('')+'<button class="light small" data-delete-code="'+safeText(r.id)+'">Eliminar</button></div>';
+    list.appendChild(card);
+  });
+}
+async function showEventCode(id,index){
+  const r=codeEvents.find(x=>String(x.id)===String(id));if(!r)return;
+  const count=Number(r.code_count)||1;viewerItems=[];
+  for(let i=0;i<count;i++){
+    const path=i===0?r.code1_path:r.code2_path;
+    const {data,error}=await qrSb.storage.from(CODE_BUCKET).createSignedUrl(path,60*60);
+    if(error){alert('No se pudo abrir el código: '+error.message);return}
+    viewerItems.push({url:data.signedUrl,title:r.event_name,label:count===1?'Acceso para 2 personas':'Persona '+(i+1),type:i===0?r.code1_type:r.code2_type});
+  }
+  viewerIndex=index;renderCodeViewer();$code('codeViewer').classList.remove('hidden');
+}
+function renderCodeViewer(){const item=viewerItems[viewerIndex];if(!item)return;$code('codeViewerImage').src=item.url;$code('codeViewerTitle').textContent=item.title;$code('codeViewerCaption').textContent=item.label+' · '+item.type+' · 2 personas';$code('codeViewerCounter').textContent=(viewerIndex+1)+' / '+viewerItems.length;$code('codeViewerPrev').disabled=viewerIndex===0;$code('codeViewerNext').disabled=viewerIndex===viewerItems.length-1}
+function closeCodeViewer(){$code('codeViewer').classList.add('hidden');$code('codeViewerImage').removeAttribute('src');viewerItems=[]}
+async function deleteCodeEvent(id){
+  if(!confirm('¿Eliminar este evento y sus imágenes originales?'))return;
+  const r=codeEvents.find(x=>String(x.id)===String(id));if(!r)return;
+  const paths=[r.code1_path,r.code2_path].filter(Boolean);
+  const {error}=await qrSb.from(CODE_TABLE).delete().eq('id',id).eq('user_id',qrUser.id);
+  if(error){alert('No se pudo eliminar: '+error.message);return}
+  if(paths.length){const rm=await qrSb.storage.from(CODE_BUCKET).remove(paths);if(rm.error)console.warn('No se pudieron borrar algunas imágenes:',rm.error.message)}
+  await loadCodeEvents();
+}
+$code('qrConnect').onclick=()=>connectQrProject().catch(e=>qrConnStatus(e.message,true));$code('qrLogin').onclick=()=>qrAuth(false).catch(e=>qrConnStatus(e.message,true));$code('qrSignup').onclick=()=>qrAuth(true).catch(e=>qrConnStatus(e.message,true));$code('qrLogout').onclick=()=>qrLogout().catch(e=>qrConnStatus(e.message,true));
+$code('addCodeEvent').onclick=()=>{if(!qrSb||!qrUser){alert('Primero conecta e inicia sesión en el proyecto QR.');return}openCodeEventForm()};$code('syncCodeEvents').onclick=loadCodeEvents;$code('codeEventCancel').onclick=closeCodeEventForm;$code('codeEventSave').onclick=saveCodeEvent;
+$code('codeSearch').addEventListener('input',renderCodeEvents);$code('codeDateFilter').addEventListener('change',renderCodeEvents);$code('clearCodeFilters').onclick=()=>{$code('codeSearch').value='';$code('codeDateFilter').value='';renderCodeEvents()};
+$code('codeEventList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.showCode)showEventCode(b.dataset.showCode,Number(b.dataset.index));if(b.dataset.deleteCode)deleteCodeEvent(b.dataset.deleteCode)});
+$code('codeViewerClose').onclick=closeCodeViewer;$code('codeViewerPrev').onclick=()=>{if(viewerIndex>0){viewerIndex--;renderCodeViewer()}};$code('codeViewerNext').onclick=()=>{if(viewerIndex<viewerItems.length-1){viewerIndex++;renderCodeViewer()}};
+
+sb.auth.getSession().then(({data})=>{if(data.session?.user)initUser(data.session.user);else showLogin('')}).catch(e=>showLogin('No se pudo conectar con Supabase: '+(e.message||e)));document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!document.getElementById('app').classList.contains('hidden')){loadFlights();loadHotels();loadCodeEvents()}});
+</script></body></html>
