@@ -711,4 +711,263 @@ window.loadEntries=async function(){
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{if(t.dataset.screen==='entradas'&&window.PTCHU_V12_REFRESH)window.PTCHU_V12_REFRESH();}));
 
 sb.auth.getSession().then(({data})=>{if(data.session?.user)initUser(data.session.user);else showLogin('')}).catch(e=>showLogin('No se pudo conectar con Supabase: '+(e.message||e)));document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!document.getElementById('app').classList.contains('hidden')){loadFlights();loadHotels();loadEntries()}});
-</script></body></html>
+/* ===== PTCHU TICKETS QR ===== */
+(()=>{
+  const style=document.createElement('style');
+  style.textContent=`
+    #ticketsqr .tq-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+    #ticketsqr .tq-table-wrap{overflow-x:auto}
+    #ticketsqr table{width:100%;border-collapse:collapse;font-size:13px}
+    #ticketsqr th,#ticketsqr td{padding:8px 5px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}
+    #ticketsqr img{width:58px;height:58px;object-fit:contain;border:1px solid #ddd;border-radius:5px;background:white}
+    #ticketsqr button,.tq-modal button{cursor:pointer;padding:8px 11px;border-radius:7px}
+    .tq-modal{position:fixed;inset:0;background:#0009;z-index:9999;display:none;overflow:auto;padding:15px}
+    .tq-modal-box{background:var(--card,#fff);color:var(--text,inherit);max-width:520px;margin:25px auto;padding:16px;border-radius:12px}
+    .tq-modal-box label{display:block;margin:10px 0 4px;font-weight:600}
+    .tq-modal-box input,.tq-modal-box select,.tq-modal-box textarea{width:100%;box-sizing:border-box;padding:9px;border:1px solid #aaa;border-radius:6px}
+    .tq-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+    .tq-muted{font-size:12px;opacity:.75}
+  `;
+  document.head.appendChild(style);
+
+  const nav=document.querySelector('nav');
+  const main=document.querySelector('main');
+  if(!nav||!main||document.getElementById('ticketsqr')) return;
+
+  const tab=document.createElement('button');
+  tab.className='tab';
+  tab.dataset.screen='ticketsqr';
+  tab.textContent='🎫 Tickets QR';
+  nav.appendChild(tab);
+
+  const screen=document.createElement('section');
+  screen.id='ticketsqr';
+  screen.className='screen';
+  screen.innerHTML=`
+    <h2>🎫 PTCHU · Tickets QR</h2>
+    <p class="tq-muted">Entradas originales para dos personas. El QR puede ser compartido o individual.</p>
+    <div class="tq-toolbar">
+      <button type="button" id="tqAdd">＋ Agregar ticket</button>
+      <button type="button" id="tqRefresh">☁️ Sincronizar</button>
+    </div>
+    <div id="tqMessage" class="tq-muted">Cargando tickets...</div>
+    <div class="tq-table-wrap">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Ciudad</th><th>Atracción / evento</th>
+          <th>Horario</th><th>Referencia</th><th>QR</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="tqRows"></tbody>
+      </table>
+    </div>
+  `;
+  main.appendChild(screen);
+
+  const modal=document.createElement('div');
+  modal.className='tq-modal';
+  modal.id='tqModal';
+  modal.innerHTML=`
+    <div class="tq-modal-box">
+      <h3 id="tqFormTitle">Agregar ticket</h3>
+      <form id="tqForm">
+        <label>Fecha</label><input id="tqDate" type="date" required>
+        <label>Ciudad</label><input id="tqCity" required>
+        <label>Atracción / evento</label><input id="tqAttraction" required>
+        <label>Horario</label><input id="tqSchedule" placeholder="Ej. 09:00">
+        <label>Referencia</label><input id="tqReference">
+        <label>Personas</label><input value="2 personas" disabled>
+        <label>Cantidad de códigos QR</label>
+        <select id="tqCount"><option value="1">1 QR compartido para 2 personas</option><option value="2">2 QR individuales</option></select>
+        <label>Archivo QR 1 (imagen original)</label><input id="tqFile1" type="file" accept="image/jpeg,image/png,image/webp">
+        <label id="tqFile2Label">Archivo QR 2 (solo si son dos códigos)</label>
+        <input id="tqFile2" type="file" accept="image/jpeg,image/png,image/webp">
+        <label>Notas</label><textarea id="tqNotes" rows="2"></textarea>
+        <div class="tq-actions">
+          <button type="submit">Guardar ticket</button>
+          <button type="button" id="tqCancel">Cancelar</button>
+        </div>
+        <p class="tq-muted">Usa la imagen original del QR. No se genera un código nuevo.</p>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const $=id=>document.getElementById(id);
+  let currentUser=null;
+  let editing=null;
+  let records=[];
+
+  function message(s){$('tqMessage').textContent=s;}
+  function esc(s){
+    return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function dateDisplay(s){
+    if(!s)return '';
+    const p=s.slice(0,10).split('-');
+    return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:s;
+  }
+  function openForm(record=null){
+    editing=record;
+    $('tqForm').reset();
+    $('tqFormTitle').textContent=record?'Editar ticket':'Agregar ticket';
+    $('tqDate').value=record?.travel_date||'';
+    $('tqCity').value=record?.city||'';
+    $('tqAttraction').value=record?.attraction||'';
+    $('tqSchedule').value=record?.schedule||'';
+    $('tqReference').value=record?.reference||'';
+    $('tqCount').value=String(record?.qr_count||1);
+    $('tqNotes').value=record?.notes||'';
+    $('tqFile1').required=!record?.qr1_path;
+    $('tqFile2').required=!!record&&Number(record.qr_count)===2&&!record.qr2_path;
+    $('tqFile2').style.display=$('tqCount').value==='2'?'block':'none';
+    $('tqFile2Label').style.display=$('tqCount').value==='2'?'block':'none';
+    modal.style.display='block';
+  }
+  function closeForm(){modal.style.display='none';editing=null;}
+
+  $('tqCount').onchange=()=>{
+    const two=$('tqCount').value==='2';
+    $('tqFile2').style.display=two?'block':'none';
+    $('tqFile2Label').style.display=two?'block':'none';
+    $('tqFile2').required=two&&!editing?.qr2_path;
+  };
+  $('tqAdd').onclick=()=>openForm();
+  $('tqCancel').onclick=closeForm;
+  modal.onclick=e=>{if(e.target===modal)closeForm();};
+
+  async function signedImage(path){
+    if(!path)return '';
+    const {data,error}=await sb.storage.from('ptchu-tickets').createSignedUrl(path,3600);
+    if(error)throw error;
+    return data.signedUrl;
+  }
+
+  async function loadTickets(){
+    const {data:{user},error:userError}=await sb.auth.getUser();
+    if(userError||!user){message('Inicia sesión para consultar tus tickets.');return;}
+    currentUser=user;
+    message('Consultando tickets...');
+    const {data,error}=await sb.from('ticket_qr')
+      .select('*').eq('user_id',user.id).order('travel_date',{ascending:true});
+    if(error){message('Error al consultar: '+error.message);return;}
+    records=data||[];
+    const rows=[];
+    for(const r of records){
+      let qr='';
+      try{
+        const u1=await signedImage(r.qr1_path);
+        const u2=r.qr2_path?await signedImage(r.qr2_path):'';
+        qr=`<a href="${u1}" target="_blank"><img src="${u1}" alt="QR 1"></a>`;
+        if(u2)qr+=` <a href="${u2}" target="_blank"><img src="${u2}" alt="QR 2"></a>`;
+      }catch(e){qr='No se pudo mostrar';}
+      rows.push(`<tr>
+        <td>${dateDisplay(r.travel_date)}</td>
+        <td>${esc(r.city)}</td>
+        <td>${esc(r.attraction)}</td>
+        <td>${esc(r.schedule)}</td>
+        <td>${esc(r.reference)}</td>
+        <td>${qr}</td>
+        <td><button type="button" data-edit="${r.id}">Editar</button>
+        <button type="button" data-delete="${r.id}">Eliminar</button></td>
+      </tr>`);
+    }
+    $('tqRows').innerHTML=rows.join('');
+    message(records.length?`Tickets registrados: ${records.length}`:'Todavía no hay tickets registrados.');
+  }
+
+  async function uploadQR(file,slot){
+    if(!file)return null;
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('El QR debe ser JPG, PNG o WEBP.');
+    if(file.size>10*1024*1024)throw Error('La imagen supera el límite de 10 MB.');
+    const ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg';
+    const path=`${currentUser.id}/${Date.now()}-${Math.random().toString(36).slice(2)}-${slot}.${ext}`;
+    const {error}=await sb.storage.from('ptchu-tickets').upload(path,file,{upsert:false});
+    if(error)throw error;
+    return path;
+  }
+
+  $('tqForm').onsubmit=async e=>{
+    e.preventDefault();
+    if(!currentUser)return;
+    const count=Number($('tqCount').value);
+    const f1=$('tqFile1').files[0];
+    const f2=$('tqFile2').files[0];
+    if(!editing?.qr1_path&&!f1){alert('Selecciona el archivo del QR 1.');return;}
+    if(count===2&&!editing?.qr2_path&&!f2){alert('Selecciona el archivo del QR 2.');return;}
+    const save=$('tqForm').querySelector('[type=submit]');
+    save.disabled=true;save.textContent='Guardando...';
+    let newPaths=[];
+    try{
+      let p1=editing?.qr1_path||null;
+      let p2=count===2?(editing?.qr2_path||null):null;
+      if(f1){p1=await uploadQR(f1,'qr1');newPaths.push(p1);}
+      if(count===2&&f2){p2=await uploadQR(f2,'qr2');newPaths.push(p2);}
+      const payload={
+        user_id:currentUser.id,
+        travel_date:$('tqDate').value,
+        city:$('tqCity').value.trim(),
+        attraction:$('tqAttraction').value.trim(),
+        schedule:$('tqSchedule').value.trim(),
+        reference:$('tqReference').value.trim(),
+        people_count:2,qr_count:count,qr1_path:p1,qr2_path:p2,
+        notes:$('tqNotes').value.trim()
+      };
+      let result;
+      if(editing){
+        result=await sb.from('ticket_qr').update(payload).eq('id',editing.id).eq('user_id',currentUser.id);
+      }else{
+        result=await sb.from('ticket_qr').insert(payload);
+      }
+      if(result.error)throw result.error;
+      const oldPaths=[];
+      if(editing){
+        if(f1&&editing.qr1_path)oldPaths.push(editing.qr1_path);
+        if(count===1&&editing.qr2_path)oldPaths.push(editing.qr2_path);
+        if(count===2&&f2&&editing.qr2_path)oldPaths.push(editing.qr2_path);
+      }
+      if(oldPaths.length)await sb.storage.from('ptchu-tickets').remove(oldPaths);
+      closeForm();
+      await loadTickets();
+      alert('Ticket guardado correctamente.');
+    }catch(err){
+      if(newPaths.length)await sb.storage.from('ptchu-tickets').remove(newPaths);
+      alert('No se pudo guardar: '+err.message);
+    }finally{
+      save.disabled=false;save.textContent='Guardar ticket';
+    }
+  };
+
+  $('tqRows').onclick=async e=>{
+    const edit=e.target.closest('[data-edit]');
+    const del=e.target.closest('[data-delete]');
+    if(edit){
+      const r=records.find(x=>x.id===edit.dataset.edit);
+      if(r)openForm(r);
+    }
+    if(del){
+      const r=records.find(x=>x.id===del.dataset.delete);
+      if(!r||!confirm('¿Eliminar este ticket y sus imágenes QR?'))return;
+      const paths=[r.qr1_path,r.qr2_path].filter(Boolean);
+      const {error}=await sb.from('ticket_qr').delete().eq('id',r.id).eq('user_id',currentUser.id);
+      if(error){alert('No se pudo eliminar: '+error.message);return;}
+      if(paths.length)await sb.storage.from('ptchu-tickets').remove(paths);
+      await loadTickets();
+    }
+  };
+
+  $('tqRefresh').onclick=loadTickets;
+
+  tab.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+    screen.classList.add('active');
+    loadTickets();
+  };
+
+  const previousInitUser=initUser;
+  initUser=async function(user){
+    await previousInitUser(user);
+    await loadTickets();
+  };
+})();</script></body></html>
