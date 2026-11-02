@@ -970,4 +970,66 @@ sb.auth.getSession().then(({data})=>{if(data.session?.user)initUser(data.session
     await previousInitUser(user);
     await loadTickets();
   };
+})();/* ===== MEJORA BUSCADOR Y ACCIONES TICKETS QR ===== */
+(()=>{
+  const screen=document.getElementById('ticketsqr');
+  if(!screen||document.getElementById('tqSearch'))return;
+
+  const style=document.createElement('style');
+  style.textContent=`
+    #ticketsqr .tq-search-box{
+      display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;
+    }
+    #ticketsqr #tqSearch{
+      flex:1;min-width:220px;max-width:100%;
+      box-sizing:border-box;padding:11px;
+      border:1px solid #aaa;border-radius:8px;
+      font-size:15px;background:white;color:#172033;
+    }
+    #ticketsqr .tq-table-wrap{overflow-x:auto;max-width:100%}
+    #ticketsqr table{border-collapse:separate;border-spacing:0}
+    #ticketsqr th:last-child{
+      position:sticky;right:0;z-index:4;
+      background:#e9eef5;min-width:145px;
+      box-shadow:-3px 0 5px #0001;
+    }
+    #ticketsqr td:last-child{
+      position:sticky;right:0;z-index:3;
+      background:#f1f5f9;min-width:145px;
+      box-shadow:-3px 0 5px #0001;
+      white-space:nowrap;
+    }
+    #ticketsqr td:last-child button{
+      margin:2px;padding:7px 9px;font-size:13px;
+    }
+  `;
+  document.head.appendChild(style);
+
+  const toolbar=screen.querySelector('.tq-toolbar');
+  toolbar.insertAdjacentHTML('afterend',`
+    <div class="tq-search-box">
+      <input id="tqSearch" type="search"
+        placeholder="Buscar ciudad, atracción, referencia o fecha...">
+      <button type="button" id="tqClearSearch">Limpiar</button>
+    </div>
+  `);
+
+  const search=document.getElementById('tqSearch');
+  const tbody=document.getElementById('tqRows');
+
+  function filterTickets(){
+    const term=search.value.trim().toLocaleLowerCase();
+    tbody.querySelectorAll('tr').forEach(row=>{
+      row.style.display=row.textContent.toLocaleLowerCase().includes(term)?'':'none';
+    });
+  }
+
+  search.addEventListener('input',filterTickets);
+  document.getElementById('tqClearSearch').onclick=()=>{
+    search.value='';
+    filterTickets();
+    search.focus();
+  };
+
+  new MutationObserver(filterTickets).observe(tbody,{childList:true});
 })();</script></body></html>
