@@ -186,11 +186,55 @@ main .screen > .card > h2{font-size:26px;text-align:center}
 @media(max-width:700px){nav{gap:2px}nav button{font-size:16px!important;padding:11px 9px!important}main .screen > .card > h2{font-size:24px}}
 </style>
 
+
+<style id="ptchu-mi-viaje-css">
+#mi-viaje .mv-list{display:grid;gap:8px}
+#mi-viaje .mv-item{padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0}
+#mi-viaje .mv-item b{display:block;margin-bottom:3px}
+#mi-viaje .mv-empty{color:#64748b;padding:8px 0}
+#mi-viaje .card h2{margin-top:0}
+</style>
 </head><body>
 <div id="login"><div class="loginbox"><h1>PTCHU · EUROPA 2027</h1><p>Inicia sesión para que tus vuelos se guarden en la nube y aparezcan en tus otros dispositivos.</p><label>Correo electrónico<input id="email" type="email" autocomplete="email" placeholder="tu correo"></label><label>Contraseña<input id="password" type="password" autocomplete="current-password" placeholder="mínimo 6 caracteres"></label><div class="login-actions"><button class="primary" id="loginBtn">Iniciar sesión</button><button class="light" id="signupBtn">Crear cuenta</button></div><div id="loginMsg" class="note"></div></div></div>
 <div id="app" class="hidden"><header><h1>PTCHU · EUROPA 2027</h1><p>10–27 marzo 2027 · 2 pasajeros · Carry-on</p><div class="userline"><span id="userEmail"></span><button id="logout">Cerrar sesión</button></div><span id="cloudStatus" class="status">Conectando...</span></header>
-<nav><button class="tab active" data-screen="vuelos">✈️ Vuelos</button><button class="tab" data-screen="hoteles">🏨 Hoteles</button><button class="tab" data-screen="transporte">🚇 Transporte</button><button class="tab" data-screen="entradas">🎟️ Entradas</button></nav>
-<main><section id="vuelos" class="screen active"><div class="card"><h2>Matriz de vuelos</h2><div class="muted">Los cambios se guardan en Supabase y se sincronizan entre dispositivos.</div><div class="kpis"><div class="kpi"><span class="muted">Vuelos</span><b id="count">0</b></div><div class="kpi"><span class="muted">Primer vuelo</span><b>08/03</b></div><div class="kpi"><span class="muted">Último tramo</span><b id="lastLeg">—</b></div></div><div class="toolbar"><button class="primary" id="add">＋ Agregar vuelo</button><button class="dark" id="save">☁️ Sincronizar</button><button class="light" id="reset">↺ Restaurar matriz</button></div><div class="tablewrap"><table><thead><tr><th style="background:#dbeafe">Fecha</th><th style="background:#dcfce7">Aerolínea</th><th style="background:#fef3c7">Reservación</th><th style="background:#ffedd5">Origen</th><th style="background:#fee2e2">Hora</th><th style="background:#ede9fe">Destino</th><th style="background:#f3e8d3">Hora</th><th style="background:#e5e7eb"># Vuelo</th><th class="actions">Acciones</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
+<nav><button class="tab active" data-screen="mi-viaje">🧭 MI VIAJE</button><button class="tab" data-screen="vuelos">✈️ Vuelos</button><button class="tab" data-screen="hoteles">🏨 Hoteles</button><button class="tab" data-screen="transporte">🚇 Transporte</button><button class="tab" data-screen="entradas">🎟️ Entradas</button></nav>
+<main>
+<section id="mi-viaje" class="screen active">
+  <div class="card">
+    <h2>🧭 MI VIAJE</h2>
+    <div class="muted">Europa · 10–27 marzo 2027 · 2 pasajeros</div>
+    <div class="kpis">
+      <div class="kpi"><span class="muted">Vuelos</span><b id="mvFlights">—</b></div>
+      <div class="kpi"><span class="muted">Hoteles</span><b id="mvHotels">—</b></div>
+      <div class="kpi"><span class="muted">Tickets QR</span><b id="mvTickets">—</b></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>🌍 Ciudades del recorrido</h2>
+    <div id="mvCities" class="muted">Lisboa · Madrid · Roma · Estambul · Atenas · París · Praga</div>
+  </div>
+  <div class="card">
+    <h2>✈️ Próximos vuelos</h2>
+    <div id="mvFlightList" class="muted">Cargando vuelos...</div>
+  </div>
+  <div class="card">
+    <h2>🏨 Hoteles</h2>
+    <div id="mvHotelList" class="muted">Cargando hoteles...</div>
+  </div>
+  <div class="card">
+    <h2>🎫 Próximos tickets QR</h2>
+    <div id="mvTicketList" class="muted">Cargando tickets...</div>
+  </div>
+  <div class="card">
+    <h2>🚇 Transporte</h2>
+    <div class="muted">Accede a las opciones de transporte de cada ciudad desde el módulo Transporte.</div>
+  </div>
+  <div class="card">
+    <h2>🎟️ Entradas y visitas</h2>
+    <div id="mvEntrySummary" class="muted">Consulta tus ciudades y lugares por visitar en el módulo Entradas.</div>
+  </div>
+</section>
+<section id="vuelos" class="screen"><div class="card"><h2>Matriz de vuelos</h2><div class="muted">Los cambios se guardan en Supabase y se sincronizan entre dispositivos.</div><div class="kpis"><div class="kpi"><span class="muted">Vuelos</span><b id="count">0</b></div><div class="kpi"><span class="muted">Primer vuelo</span><b>08/03</b></div><div class="kpi"><span class="muted">Último tramo</span><b id="lastLeg">—</b></div></div><div class="toolbar"><button class="primary" id="add">＋ Agregar vuelo</button><button class="dark" id="save">☁️ Sincronizar</button><button class="light" id="reset">↺ Restaurar matriz</button></div><div class="tablewrap"><table><thead><tr><th style="background:#dbeafe">Fecha</th><th style="background:#dcfce7">Aerolínea</th><th style="background:#fef3c7">Reservación</th><th style="background:#ffedd5">Origen</th><th style="background:#fee2e2">Hora</th><th style="background:#ede9fe">Destino</th><th style="background:#f3e8d3">Hora</th><th style="background:#e5e7eb"># Vuelo</th><th class="actions">Acciones</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
 
 <section id="hoteles" class="screen">
   <div class="card">
@@ -851,6 +895,8 @@ sb.auth.getSession().then(({data})=>{if(data.session?.user)initUser(data.session
       .select('*').eq('user_id',user.id).order('travel_date',{ascending:true});
     if(error){message('Error al consultar: '+error.message);return;}
     records=data||[];
+    window.PTCHU_TICKETS_DATA=records;
+    if(window.PTCHU_RENDER_MI_VIAJE)window.PTCHU_RENDER_MI_VIAJE();
     const rows=[];
     for(const r of records){
       let qr='';
@@ -1032,4 +1078,48 @@ sb.auth.getSession().then(({data})=>{if(data.session?.user)initUser(data.session
   };
 
   new MutationObserver(filterTickets).observe(tbody,{childList:true});
-})();</script></body></html>
+})();
+/* ===== PTCHU MI VIAJE: panel resumen de solo lectura ===== */
+(()=>{
+  const $=id=>document.getElementById(id);
+  const safe=(v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const dmy=(v)=>{
+    if(!v)return '—';
+    const x=String(v).slice(0,10);
+    const m=x.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(m)return `${m[3]}/${m[2]}/${m[1].slice(2)}`;
+    return x;
+  };
+  const list=(id,items,empty)=>{
+    const el=$(id);if(!el)return;
+    el.innerHTML=items.length?'<div class="mv-list">'+items.join('')+'</div>':'<div class="mv-empty">'+empty+'</div>';
+  };
+  window.PTCHU_RENDER_MI_VIAJE=function(){
+    if(!$('mi-viaje'))return;
+    const flights=Array.isArray(rows)?rows.slice():[];
+    const hs=Array.isArray(hotels)?hotels.slice():[];
+    const ts=Array.isArray(window.PTCHU_TICKETS_DATA)?window.PTCHU_TICKETS_DATA.slice():[];
+    const es=Array.isArray(window.PTCHU_ENTRY_DATA)?window.PTCHU_ENTRY_DATA:[];
+    $('mvFlights').textContent=flights.length;
+    $('mvHotels').textContent=hs.length;
+    $('mvTickets').textContent=ts.length;
+    const upcomingFlights=flights.filter(r=>r.flight_date).sort((a,b)=>String(a.flight_date).localeCompare(String(b.flight_date)));
+    list('mvFlightList',upcomingFlights.map(r=>`<div class="mv-item"><b>${safe(dmy(r.flight_date))} · ${safe(r.airline||'Vuelo')}</b>${safe(r.origin||'—')} → ${safe(r.destination||'—')} · ${safe(r.flight_number||'')}</div>`),'No hay vuelos registrados.');
+    list('mvHotelList',hs.map(r=>`<div class="mv-item"><b>${safe(r.Ciudad||'Ciudad')} · ${safe(r.Hotel||'Hotel')}</b>${safe(dmy(r.ChIn))} – ${safe(dmy(r.ChOut))}<br>${safe(r.Dirección||'Dirección no registrada')}</div>`),'No hay hoteles registrados.');
+    const upcomingTickets=ts.slice().sort((a,b)=>String(a.travel_date||'').localeCompare(String(b.travel_date||'')));
+    list('mvTicketList',upcomingTickets.map(r=>`<div class="mv-item"><b>${safe(dmy(r.travel_date))} · ${safe(r.city||'')}</b>${safe(r.attraction||'Ticket')}${r.schedule?' · '+safe(r.schedule):''}</div>`),'No hay tickets QR registrados.');
+    const visited=es.filter(r=>r.visited===true && String(r.poi||'').trim().toUpperCase()!=='__CITY__').length;
+    const poi=es.filter(r=>String(r.poi||'').trim() && String(r.poi||'').trim().toUpperCase()!=='__CITY__').length;
+    $('mvEntrySummary').textContent=poi?`${poi} lugares registrados · ${visited} visitados. Consulta el detalle en Entradas.`:'Consulta y organiza las ciudades y lugares por visitar en Entradas.';
+  };
+})();
+
+/* Actualiza MI VIAJE cuando se refrescan los módulos existentes. */
+(()=>{
+  const refresh=()=>{if(window.PTCHU_RENDER_MI_VIAJE)window.PTCHU_RENDER_MI_VIAJE();};
+  const oldRender=render;render=function(){oldRender();refresh();};
+  const oldRenderHotels=renderHotels;renderHotels=function(){oldRenderHotels();refresh();};
+  const oldLoadEntries=window.loadEntries;window.loadEntries=async function(){await oldLoadEntries();refresh();};
+  const oldInit=initUser;initUser=async function(user){await oldInit(user);refresh();};
+})();
+</script></body></html>
