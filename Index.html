@@ -1122,4 +1122,48 @@ sb.auth.getSession().then(({data})=>{if(data.session?.user)initUser(data.session
   const oldLoadEntries=window.loadEntries;window.loadEntries=async function(){await oldLoadEntries();refresh();};
   const oldInit=initUser;initUser=async function(user){await oldInit(user);refresh();};
 })();
+
+/* ===== PTCHU GASTRONOMÍA: módulo independiente en public.gastronomia ===== */
+(()=>{
+ const nav=document.querySelector('nav'), main=document.querySelector('main');
+ if(!nav||!main||document.getElementById('gastronomia')) return;
+ const cities=['Lisboa','Madrid','Roma','Estambul','Atenas','París','Praga','Berlín','Hamburgo'];
+ const tab=document.createElement('button');tab.className='tab';tab.dataset.screen='gastronomia';tab.textContent='🍽️ Gastronomía';nav.appendChild(tab);
+ const screen=document.createElement('section');screen.id='gastronomia';screen.className='screen';
+ screen.innerHTML=`<div class="card gastro-card"><h2>🍽️ PTCHU · Gastronomía</h2><p class="muted">Guarda varios restaurantes por ciudad. Los registros son independientes de Entradas y POI.</p>
+ <div class="toolbar"><button class="primary" id="gAdd">＋ Agregar restaurante</button><button class="dark" id="gSync">☁️ Sincronizar</button></div>
+ <div class="toolbar"><input id="gSearch" type="search" placeholder="Buscar restaurante, ciudad o especialidad…" style="flex:1;min-width:220px;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit"></div>
+ <div id="gStatus" class="muted" role="status">Cargando gastronomía…</div><div id="gRows" class="gastro-list"></div></div>`;
+ main.appendChild(screen);
+ const modal=document.createElement('div');modal.id='gModal';modal.className='modal';modal.innerHTML=`<div class="modalbox"><h2 id="gModalTitle">Agregar restaurante</h2><div class="grid" id="gFields">
+ <label>Ciudad<select id="gCity">${cities.map(c=>`<option>${c}</option>`).join('')}</select></label>
+ <label>Nombre del restaurante<input id="gName" maxlength="180" required></label>
+ <label>Dirección<input id="gAddress" maxlength="300"></label><label>Especialidad gastronómica<input id="gSpecialty" maxlength="180"></label>
+ <label>Plato recomendado<input id="gDish" maxlength="180"></label><label>Precio por persona<input id="gPrice" type="number" min="0" step="0.01"></label>
+ <label>Horario<input id="gHours" maxlength="180" placeholder="Ej. 12:00–22:00"></label><label>Enlace Google Maps<input id="gMaps" type="url" maxlength="1000" placeholder="https://maps.google.com/…"></label>
+ <label style="grid-column:1/-1">Observaciones<textarea id="gNotes" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;font:inherit"></textarea></label>
+ <label style="grid-column:1/-1;display:flex;align-items:center;gap:9px"><input id="gVisited" type="checkbox" style="width:auto"> Visitado</label>
+ </div><div class="modal-actions"><button class="light" id="gCancel">Cancelar</button><button class="primary" id="gSave">Guardar restaurante</button></div></div>`;
+ document.body.appendChild(modal);
+ const style=document.createElement('style');style.textContent=`#gastronomia .gastro-list{display:grid;gap:10px;margin-top:12px}#gastronomia .gastro-item{border:1px solid #dbe3ee;border-radius:12px;padding:13px;background:#f8fafc}#gastronomia .gastro-item h3{margin:0 0 6px;font-size:18px}#gastronomia .gastro-meta{font-size:14px;color:#475569;line-height:1.5}#gastronomia .gastro-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}#gastronomia .gastro-actions button{padding:8px 10px}#gastronomia .gastro-visited{color:#166534;font-weight:700}#gModal label{display:block;font-size:13px;font-weight:700}#gModal input:not([type=checkbox]),#gModal select{width:100%;box-sizing:border-box;padding:10px;margin-top:4px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}#gModal textarea{box-sizing:border-box;margin-top:4px}#gModal .grid{gap:12px}@media(max-width:650px){#gModal .grid{grid-template-columns:1fr}#gModal label[style*="grid-column"]{grid-column:auto!important}}`;
+ document.head.appendChild(style);
+ let records=[],editing=null;
+ const $=id=>document.getElementById(id);
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const msg=(t,err=false)=>{$('gStatus').textContent=t;$('gStatus').style.color=err?'#b91c1c':'#64748b'};
+ function render(){const q=$('gSearch').value.trim().toLocaleLowerCase('es');const shown=records.filter(r=>[r.ciudad,r.restaurante,r.especialidad,r.plato_recomendado,r.direccion].some(v=>String(v||'').toLocaleLowerCase('es').includes(q))).sort((a,b)=>cities.indexOf(a.ciudad)-cities.indexOf(b.ciudad)||a.restaurante.localeCompare(b.restaurante,'es'));
+  $('gRows').innerHTML=shown.length?shown.map(r=>`<article class="gastro-item"><h3>${esc(r.restaurante)} · ${esc(r.ciudad)}</h3><div class="gastro-meta">${r.especialidad?`<b>Especialidad:</b> ${esc(r.especialidad)}<br>`:''}${r.direccion?`<b>Dirección:</b> ${esc(r.direccion)}<br>`:''}${r.plato_recomendado?`<b>Plato recomendado:</b> ${esc(r.plato_recomendado)}<br>`:''}${r.precio_persona!==null&&r.precio_persona!==''?`<b>Precio/persona:</b> ${esc(r.precio_persona)}<br>`:''}${r.horario?`<b>Horario:</b> ${esc(r.horario)}<br>`:''}${r.observaciones?`<b>Notas:</b> ${esc(r.observaciones)}<br>`:''}<span class="${r.visitado?'gastro-visited':''}">${r.visitado?'✓ Visitado':'○ Pendiente'}</span></div><div class="gastro-actions">${r.google_maps?`<button class="light" data-action="map" data-id="${r.id}">📍 Google Maps</button>`:''}<button class="light" data-action="visit" data-id="${r.id}">${r.visitado?'Quitar Visitado':'✓ Marcar visitado'}</button><button class="edit" data-action="edit" data-id="${r.id}">✏️ Editar</button><button class="delete" data-action="delete" data-id="${r.id}">🗑️ Eliminar</button></div></article>`).join(''):'<div class="empty">No hay restaurantes que coincidan con la búsqueda.</div>';
+  msg(`${records.length} restaurantes registrados · ${records.filter(r=>r.visitado).length} visitados`);
+ }
+ async function load(){const {data,error}=await sb.from('gastronomia').select('*').order('ciudad').order('restaurante');if(error){msg('Error al cargar Gastronomía: '+error.message,true);return}records=data||[];render()}
+ function openForm(r=null){editing=r?.id||null;$('gModalTitle').textContent=r?'Editar restaurante':'Agregar restaurante';$('gCity').value=r?.ciudad||cities[0];$('gName').value=r?.restaurante||'';$('gAddress').value=r?.direccion||'';$('gSpecialty').value=r?.especialidad||'';$('gDish').value=r?.plato_recomendado||'';$('gPrice').value=r?.precio_persona??'';$('gHours').value=r?.horario||'';$('gMaps').value=r?.google_maps||'';$('gNotes').value=r?.observaciones||'';$('gVisited').checked=!!r?.visitado;modal.classList.add('open')}
+ function close(){modal.classList.remove('open');editing=null}
+ async function save(){const name=$('gName').value.trim();if(!name){alert('Escribe el nombre del restaurante.');return}const user=(await sb.auth.getUser()).data.user;if(!user){alert('La sesión no está disponible.');return}const price=$('gPrice').value.trim();const payload={ciudad:$('gCity').value,restaurante:name,direccion:$('gAddress').value.trim()||null,especialidad:$('gSpecialty').value.trim()||null,plato_recomendado:$('gDish').value.trim()||null,precio_persona:price===''?null:Number(price),horario:$('gHours').value.trim()||null,google_maps:$('gMaps').value.trim()||null,observaciones:$('gNotes').value.trim()||null,visitado:$('gVisited').checked};let res;if(editing)res=await sb.from('gastronomia').update(payload).eq('id',editing).eq('user_id',user.id);else res=await sb.from('gastronomia').insert({...payload,user_id:user.id});if(res.error){alert('No se pudo guardar: '+res.error.message);return}close();await load()}
+ async function action(e){const b=e.target.closest('button[data-action]');if(!b)return;const r=records.find(x=>String(x.id)===String(b.dataset.id));if(!r)return;const a=b.dataset.action;if(a==='map'){window.open(r.google_maps,'_blank','noopener,noreferrer');return}if(a==='edit'){openForm(r);return}if(a==='visit'){const {error}=await sb.from('gastronomia').update({visitado:!r.visitado}).eq('id',r.id).eq('user_id',r.user_id);if(error){alert('No se pudo actualizar Visitado: '+error.message);return}await load();return}if(a==='delete'&&confirm('¿Eliminar el restaurante «'+r.restaurante+'»?')){const {error}=await sb.from('gastronomia').delete().eq('id',r.id).eq('user_id',r.user_id);if(error){alert('No se pudo eliminar: '+error.message);return}await load()}}
+ tab.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));tab.classList.add('active');document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));screen.classList.add('active');load()};
+ $('gAdd').onclick=()=>openForm();$('gSync').onclick=load;$('gSearch').addEventListener('input',render);$('gCancel').onclick=close;$('gSave').onclick=save;$('gRows').addEventListener('click',action);
+ const oldInit=initUser;initUser=async function(user){await oldInit(user);await load()};
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!$('app').classList.contains('hidden'))load()});
+})();
+
 </script></body></html>
