@@ -56,17 +56,21 @@
 
 <script id="ptchu-country-flags">
 function countryFlag(code){
-  const c=(code||'').toUpperCase();
+  const c=(code||'').toString().trim().toUpperCase();
   const m={
     GUA:'🇬🇹', GUATEMALA:'🇬🇹',
     IAD:'🇺🇸', LGA:'🇺🇸', JFK:'🇺🇸', 'NEW YORK':'🇺🇸',
     LHR:'🇬🇧', LIS:'🇵🇹', MAD:'🇪🇸', FCO:'🇮🇹',
-    IST:'🇹🇷', ATH:'🇬🇷', CDG:'🇫🇷', ORY:'🇫🇷', PRG:'🇨🇿'
+    IST:'🇹🇷', ATH:'🇬🇷', CDG:'🇫🇷', ORY:'🇫🇷', PRG:'🇨🇿',
+    WAW:'🇵🇱', VARSOVIA:'🇵🇱', WARSAW:'🇵🇱',
+    VIE:'🇦🇹', VIENA:'🇦🇹', VIENNA:'🇦🇹',
+    BER:'🇩🇪', HAM:'🇩🇪', AMS:'🇳🇱', PTY:'🇵🇦'
   };
   return m[c]||'';
 }
 function flagAirport(code){
-  return countryFlag(code)+' '+code;
+  const c=(code||'').toString().trim();
+  return (countryFlag(c)?countryFlag(c)+' ':'')+c;
 }
 </script>
 
@@ -186,11 +190,55 @@ main .screen > .card > h2{font-size:26px;text-align:center}
 @media(max-width:700px){nav{gap:2px}nav button{font-size:16px!important;padding:11px 9px!important}main .screen > .card > h2{font-size:24px}}
 </style>
 
+
+<style id="ptchu-mi-viaje-css">
+#mi-viaje .mv-list{display:grid;gap:8px}
+#mi-viaje .mv-item{padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0}
+#mi-viaje .mv-item b{display:block;margin-bottom:3px}
+#mi-viaje .mv-empty{color:#64748b;padding:8px 0}
+#mi-viaje .card h2{margin-top:0}
+</style>
 </head><body>
 <div id="login"><div class="loginbox"><h1>PTCHU · EUROPA 2027</h1><p>Inicia sesión para que tus vuelos se guarden en la nube y aparezcan en tus otros dispositivos.</p><label>Correo electrónico<input id="email" type="email" autocomplete="email" placeholder="tu correo"></label><label>Contraseña<input id="password" type="password" autocomplete="current-password" placeholder="mínimo 6 caracteres"></label><div class="login-actions"><button class="primary" id="loginBtn">Iniciar sesión</button><button class="light" id="signupBtn">Crear cuenta</button></div><div id="loginMsg" class="note"></div></div></div>
 <div id="app" class="hidden"><header><h1>PTCHU · EUROPA 2027</h1><p>10–27 marzo 2027 · 2 pasajeros · Carry-on</p><div class="userline"><span id="userEmail"></span><button id="logout">Cerrar sesión</button></div><span id="cloudStatus" class="status">Conectando...</span></header>
-<nav><button class="tab active" data-screen="vuelos">✈️ Vuelos</button><button class="tab" data-screen="hoteles">🏨 Hoteles</button><button class="tab" data-screen="transporte">🚇 Transporte</button><button class="tab" data-screen="entradas">🎟️ Entradas</button></nav>
-<main><section id="vuelos" class="screen active"><div class="card"><h2>Matriz de vuelos</h2><div class="muted">Los cambios se guardan en Supabase y se sincronizan entre dispositivos.</div><div class="kpis"><div class="kpi"><span class="muted">Vuelos</span><b id="count">0</b></div><div class="kpi"><span class="muted">Primer vuelo</span><b>08/03</b></div><div class="kpi"><span class="muted">Último tramo</span><b id="lastLeg">—</b></div></div><div class="toolbar"><button class="primary" id="add">＋ Agregar vuelo</button><button class="dark" id="save">☁️ Sincronizar</button><button class="light" id="reset">↺ Restaurar matriz</button></div><div class="tablewrap"><table><thead><tr><th style="background:#dbeafe">Fecha</th><th style="background:#dcfce7">Aerolínea</th><th style="background:#fef3c7">Reservación</th><th style="background:#ffedd5">Origen</th><th style="background:#fee2e2">Hora</th><th style="background:#ede9fe">Destino</th><th style="background:#f3e8d3">Hora</th><th style="background:#e5e7eb"># Vuelo</th><th class="actions">Acciones</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
+<nav><button class="tab active" data-screen="mi-viaje">🧭 MI VIAJE</button><button class="tab" data-screen="vuelos">✈️ Vuelos</button><button class="tab" data-screen="hoteles">🏨 Hoteles</button><button class="tab" data-screen="transporte">🚇 Transporte</button><button class="tab" data-screen="entradas">🎟️ Entradas</button></nav>
+<main>
+<section id="mi-viaje" class="screen active">
+  <div class="card">
+    <h2>🧭 MI VIAJE</h2>
+    <div class="muted">Europa · 10–27 marzo 2027 · 2 pasajeros</div>
+    <div class="kpis">
+      <div class="kpi"><span class="muted">Vuelos</span><b id="mvFlights">—</b></div>
+      <div class="kpi"><span class="muted">Hoteles</span><b id="mvHotels">—</b></div>
+      <div class="kpi"><span class="muted">Tickets QR</span><b id="mvTickets">—</b></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>🌍 Ciudades del recorrido</h2>
+    <div id="mvCities" class="muted">🇵🇹 Lisboa · 🇪🇸 Madrid · 🇮🇹 Roma · 🇹🇷 Estambul · 🇬🇷 Atenas · 🇫🇷 París · 🇨🇿 Praga · 🇵🇱 Varsovia · 🇦🇹 Viena · 🇩🇪 Berlín · 🇩🇪 Hamburgo · 🇳🇱 Amsterdam</div>
+  </div>
+  <div class="card">
+    <h2>✈️ Próximos vuelos</h2>
+    <div id="mvFlightList" class="muted">Cargando vuelos...</div>
+  </div>
+  <div class="card">
+    <h2>🏨 Hoteles</h2>
+    <div id="mvHotelList" class="muted">Cargando hoteles...</div>
+  </div>
+  <div class="card">
+    <h2>🎫 Próximos tickets QR</h2>
+    <div id="mvTicketList" class="muted">Cargando tickets...</div>
+  </div>
+  <div class="card">
+    <h2>🚇 Transporte</h2>
+    <div class="muted">Accede a las opciones de transporte de cada ciudad desde el módulo Transporte.</div>
+  </div>
+  <div class="card">
+    <h2>🎟️ Entradas y visitas</h2>
+    <div id="mvEntrySummary" class="muted">Consulta tus ciudades y lugares por visitar en el módulo Entradas.</div>
+  </div>
+</section>
+<section id="vuelos" class="screen"><div class="card"><h2>Matriz de vuelos</h2><div class="muted">Los cambios se guardan en Supabase y se sincronizan entre dispositivos.</div><div class="kpis"><div class="kpi"><span class="muted">Vuelos</span><b id="count">0</b></div><div class="kpi"><span class="muted">Primer vuelo</span><b>08/03</b></div><div class="kpi"><span class="muted">Último tramo</span><b id="lastLeg">—</b></div></div><div class="toolbar"><button class="primary" id="add">＋ Agregar vuelo</button><button class="dark" id="save">☁️ Sincronizar</button><button class="light" id="reset">↺ Restaurar matriz</button></div><div class="tablewrap"><table><thead><tr><th style="background:#dbeafe">Fecha</th><th style="background:#dcfce7">Aerolínea</th><th style="background:#fef3c7">Reservación</th><th style="background:#ffedd5">Origen</th><th style="background:#fee2e2">Hora</th><th style="background:#ede9fe">Destino</th><th style="background:#f3e8d3">Hora</th><th style="background:#e5e7eb"># Vuelo</th><th class="actions">Acciones</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
 
 <section id="hoteles" class="screen">
   <div class="card">
@@ -264,7 +312,7 @@ const SUPABASE_URL='https://usqqsseoqdxqqapbtqsi.supabase.co';const SUPABASE_PUB
 const H=['Fecha','Aerolínea','Reservación','Origen','Hora','Destino','Hora','# Vuelo'];const INITIAL=[['08/03/27','United','E4FHZB / HGNKRB','GUA','01:05/12:35','IAD/LGA','13:49','UA1572 / UA3698'],['09/03/27','JetBlue/British Airways','NTMCGA / BKXNJK','JFK','09:14/11:50','LHR/LIS','14:50','B6007/B66300'],['12/03/27','TAP Air Portugal','X8OZ7G','LIS','11:45','MAD','14:05','TP1014'],['15/03/27','ITA Airways','CSV4CI','MAD','11:40','FCO','14:00','AZ061'],['17/03/27','Turkish Airlines','TWBHGL / T6JGFN','FCO','11:15','IST','15:55','TK1862'],['19/03/27','Aegean','Z4ULPB / Z52U3R','IST','22:00','ATH','22:30','A3995'],['21/03/27','Aegean','Y7RYML','ATH','13:20','CDG','15:55','A3612'],['23/03/27','','','CDG','','PRG','',''],['26/03/27','','','PRG','','NEW YORK','',''],['27/03/27','','','','','','','']];
 let rows=[],editId=null,channel=null,entryChannel=null;const colors=['#dbeafe','#dcfce7','#fef3c7','#ffedd5','#fee2e2','#ede9fe','#f3e8d3','#e5e7eb'];
 function status(t,ok=false,err=false){const e=document.getElementById('cloudStatus');e.textContent=t;e.className='status'+(ok?' ok':'')+(err?' err':'')}function showLogin(msg=''){document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');document.getElementById('loginMsg').textContent=msg}
-function toDbDate(v){if(!v)return null;const m=v.match(/^(\d{2})\/(\d{2})\/(\d{2})$/);if(m)return '20'+m[3]+'-'+m[2]+'-'+m[1];return v}function displayDate(v){if(!v)return '';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1].slice(2):v}const AIRPORT_FLAGS={GUA:'🇬🇹',IAD:'🇺🇸',LGA:'🇺🇸',JFK:'🇺🇸',LHR:'🇬🇧',LIS:'🇵🇹',MAD:'🇪🇸',FCO:'🇮🇹',IST:'🇹🇷',ATH:'🇬🇷',CDG:'🇫🇷',ORY:'🇫🇷',PRG:'🇨🇿',BER:'🇩🇪',HAM:'🇩🇪',AMS:'🇳🇱',PTY:'🇵🇦','NEW YORK':'🇺🇸'};const CITY_FLAGS={'lisboa':'🇵🇹','madrid':'🇪🇸','roma':'🇮🇹','estambul':'🇹🇷','istanbul':'🇹🇷','atenas':'🇬🇷','parís':'🇫🇷','paris':'🇫🇷','praga':'🇨🇿','prague':'🇨🇿','berlin':'🇩🇪','berlín':'🇩🇪','hamburgo':'🇩🇪','hamburg':'🇩🇪','nueva york':'🇺🇸','new york':'🇺🇸'};function flaggedRoute(v){if(!v)return '—';return String(v).split('/').map(x=>{const k=x.trim().toUpperCase();return (AIRPORT_FLAGS[k]||'')+(AIRPORT_FLAGS[k]?' ':'')+x.trim()}).join(' / ')}function flaggedCity(v){if(!v)return '—';const f=CITY_FLAGS[String(v).trim().toLowerCase()];return (f?f+' ':'')+v}
+function toDbDate(v){if(!v)return null;const m=v.match(/^(\d{2})\/(\d{2})\/(\d{2})$/);if(m)return '20'+m[3]+'-'+m[2]+'-'+m[1];return v}function displayDate(v){if(!v)return '';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1].slice(2):v}const AIRPORT_FLAGS={GUA:'🇬🇹',IAD:'🇺🇸',LGA:'🇺🇸',JFK:'🇺🇸',LHR:'🇬🇧',LIS:'🇵🇹',MAD:'🇪🇸',FCO:'🇮🇹',IST:'🇹🇷',ATH:'🇬🇷',CDG:'🇫🇷',ORY:'🇫🇷',PRG:'🇨🇿',WAW:'🇵🇱',VIE:'🇦🇹',BER:'🇩🇪',HAM:'🇩🇪',AMS:'🇳🇱',PTY:'🇵🇦','NEW YORK':'🇺🇸'};const CITY_FLAGS={'lisboa':'🇵🇹','madrid':'🇪🇸','roma':'🇮🇹','estambul':'🇹🇷','istanbul':'🇹🇷','atenas':'🇬🇷','parís':'🇫🇷','paris':'🇫🇷','praga':'🇨🇿','prague':'🇨🇿','berlin':'🇩🇪','berlín':'🇩🇪','hamburgo':'🇩🇪','hamburg':'🇩🇪','nueva york':'🇺🇸','new york':'🇺🇸','varsovia':'🇵🇱','warsaw':'🇵🇱','waw':'🇵🇱','viena':'🇦🇹','vienna':'🇦🇹','vie':'🇦🇹','amsterdam':'🇳🇱','ámsterdam':'🇳🇱','ams':'🇳🇱'};function flaggedRoute(v){if(!v)return '—';return String(v).split('/').map(x=>{const k=x.trim().toUpperCase();return (AIRPORT_FLAGS[k]||'')+(AIRPORT_FLAGS[k]?' ':'')+x.trim()}).join(' / ')}function flaggedCity(v){if(!v)return '—';const raw=String(v).trim();const f=CITY_FLAGS[raw.toLowerCase()]||AIRPORT_FLAGS[raw.toUpperCase()]||'';return (f?f+' ':'')+raw}
 function updateLastLeg(){
   const el=document.getElementById('lastLeg');
   if(!el)return;
@@ -692,7 +740,8 @@ window.loadEntries=async function(){
   'Estambul':{'Metro':'https://www.metro.istanbul/en','Tren':'https://www.tcddtasimacilik.gov.tr/','Autobús':'https://iett.istanbul/','Tranvía':'https://www.metro.istanbul/en','Ferry':'https://www.sehirhatlari.istanbul/en'},
   'Atenas':{'Metro':'https://www.stasy.gr/','Tren':'https://www.hellenictrain.gr/en','Autobús':'https://www.oasa.gr/en/','Tranvía':'https://www.stasy.gr/','Ferry':'https://www.ferryhopper.com/en/'},
   'París':{'Metro':'https://www.ratp.fr/en','Tren':'https://www.sncf-connect.com/en-en/','Autobús':'https://www.ratp.fr/en','Tranvía':'https://www.ratp.fr/en','RER':'https://www.ratp.fr/en'},
-  'Praga':{'Metro':'https://www.dpp.cz/en','Tren':'https://www.cd.cz/en/','Autobús':'https://www.dpp.cz/en','Tranvía':'https://www.dpp.cz/en','Funicular':'https://www.dpp.cz/en'}
+  'Praga':{'Metro':'https://www.dpp.cz/en','Tren':'https://www.cd.cz/en/','Autobús':'https://www.dpp.cz/en','Tranvía':'https://www.dpp.cz/en','Funicular':'https://www.dpp.cz/en'},
+  'Amsterdam':{'Metro':'https://www.gvb.nl/en','Tranvía':'https://www.gvb.nl/en','Autobús':'https://www.gvb.nl/en','Tren':'https://www.ns.nl/en'}
  };
  let activeUrl='';
  const tbody=document.getElementById('transportTbody'); if(!tbody)return;
@@ -851,6 +900,8 @@ sb.auth.getSession().then(({data})=>{if(data.session?.user)initUser(data.session
       .select('*').eq('user_id',user.id).order('travel_date',{ascending:true});
     if(error){message('Error al consultar: '+error.message);return;}
     records=data||[];
+    window.PTCHU_TICKETS_DATA=records;
+    if(window.PTCHU_RENDER_MI_VIAJE)window.PTCHU_RENDER_MI_VIAJE();
     const rows=[];
     for(const r of records){
       let qr='';
@@ -1032,4 +1083,96 @@ sb.auth.getSession().then(({data})=>{if(data.session?.user)initUser(data.session
   };
 
   new MutationObserver(filterTickets).observe(tbody,{childList:true});
-})();</script></body></html>
+})();
+/* ===== PTCHU MI VIAJE: panel resumen de solo lectura ===== */
+(()=>{
+  const $=id=>document.getElementById(id);
+  const safe=(v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const dmy=(v)=>{
+    if(!v)return '—';
+    const x=String(v).slice(0,10);
+    const m=x.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(m)return `${m[3]}/${m[2]}/${m[1].slice(2)}`;
+    return x;
+  };
+  const list=(id,items,empty)=>{
+    const el=$(id);if(!el)return;
+    el.innerHTML=items.length?'<div class="mv-list">'+items.join('')+'</div>':'<div class="mv-empty">'+empty+'</div>';
+  };
+  window.PTCHU_RENDER_MI_VIAJE=function(){
+    if(!$('mi-viaje'))return;
+    const flights=Array.isArray(rows)?rows.slice():[];
+    const hs=Array.isArray(hotels)?hotels.slice():[];
+    const ts=Array.isArray(window.PTCHU_TICKETS_DATA)?window.PTCHU_TICKETS_DATA.slice():[];
+    const es=Array.isArray(window.PTCHU_ENTRY_DATA)?window.PTCHU_ENTRY_DATA:[];
+    // Lista fija y completa: no depende de las ciudades registradas en Entradas.
+    const routeCities='🇵🇹 Lisboa · 🇪🇸 Madrid · 🇮🇹 Roma · 🇹🇷 Estambul · 🇬🇷 Atenas · 🇫🇷 París · 🇨🇿 Praga · 🇵🇱 Varsovia · 🇦🇹 Viena · 🇩🇪 Berlín · 🇩🇪 Hamburgo · 🇳🇱 Amsterdam';
+    const citiesEl=$('mvCities');
+    if(citiesEl) citiesEl.textContent=routeCities;
+    $('mvFlights').textContent=flights.length;
+    $('mvHotels').textContent=hs.length;
+    $('mvTickets').textContent=ts.length;
+    const upcomingFlights=flights.filter(r=>r.flight_date).sort((a,b)=>String(a.flight_date).localeCompare(String(b.flight_date)));
+    list('mvFlightList',upcomingFlights.map(r=>`<div class="mv-item"><b>${safe(dmy(r.flight_date))} · ${safe(r.airline||'Vuelo')}</b>${safe(flaggedRoute(r.origin||'—'))} → ${safe(flaggedRoute(r.destination||'—'))} · ${safe(r.flight_number||'')}</div>`),'No hay vuelos registrados.');
+    list('mvHotelList',hs.map(r=>`<div class="mv-item"><b>${safe(flaggedCity(r.Ciudad||'Ciudad'))} · ${safe(r.Hotel||'Hotel')}</b>${safe(dmy(r.ChIn))} – ${safe(dmy(r.ChOut))}<br>${safe(r.Dirección||'Dirección no registrada')}</div>`),'No hay hoteles registrados.');
+    const upcomingTickets=ts.slice().sort((a,b)=>String(a.travel_date||'').localeCompare(String(b.travel_date||'')));
+    list('mvTicketList',upcomingTickets.map(r=>`<div class="mv-item"><b>${safe(dmy(r.travel_date))} · ${safe(flaggedCity(r.city||''))}</b>${safe(r.attraction||'Ticket')}${r.schedule?' · '+safe(r.schedule):''}</div>`),'No hay tickets QR registrados.');
+    const visited=es.filter(r=>r.visited===true && String(r.poi||'').trim().toUpperCase()!=='__CITY__').length;
+    const poi=es.filter(r=>String(r.poi||'').trim() && String(r.poi||'').trim().toUpperCase()!=='__CITY__').length;
+    $('mvEntrySummary').textContent=poi?`${poi} lugares registrados · ${visited} visitados. Consulta el detalle en Entradas.`:'Consulta y organiza las ciudades y lugares por visitar en Entradas.';
+  };
+})();
+
+/* Actualiza MI VIAJE cuando se refrescan los módulos existentes. */
+(()=>{
+  const refresh=()=>{if(window.PTCHU_RENDER_MI_VIAJE)window.PTCHU_RENDER_MI_VIAJE();};
+  const oldRender=render;render=function(){oldRender();refresh();};
+  const oldRenderHotels=renderHotels;renderHotels=function(){oldRenderHotels();refresh();};
+  const oldLoadEntries=window.loadEntries;window.loadEntries=async function(){await oldLoadEntries();refresh();};
+  const oldInit=initUser;initUser=async function(user){await oldInit(user);refresh();};
+})();
+
+
+/* ===== PTCHU GASTRONOMÍA: módulo independiente en public.gastronomia ===== */
+(()=>{
+ const nav=document.querySelector('nav'), main=document.querySelector('main');
+ if(!nav||!main||document.getElementById('gastronomia')) return;
+ const cities=['Lisboa','Madrid','Roma','Estambul','Atenas','París','Praga','Varsovia','Viena','Berlín','Hamburgo','Amsterdam'];
+ const tab=document.createElement('button');tab.className='tab';tab.dataset.screen='gastronomia';tab.textContent='🍽️ Gastronomía';nav.appendChild(tab);
+ const screen=document.createElement('section');screen.id='gastronomia';screen.className='screen';
+ screen.innerHTML=`<div class="card gastro-card"><h2>🍽️ PTCHU · Gastronomía</h2><p class="muted">Guarda varios restaurantes por ciudad. Los registros son independientes de Entradas y POI.</p>
+ <div class="toolbar"><button class="primary" id="gAdd">＋ Agregar restaurante</button><button class="dark" id="gSync">☁️ Sincronizar</button></div>
+ <div class="toolbar"><input id="gSearch" type="search" placeholder="Buscar restaurante, ciudad o especialidad…" style="flex:1;min-width:220px;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit"></div>
+ <div id="gStatus" class="muted" role="status">Cargando gastronomía…</div><div id="gRows" class="gastro-list"></div></div>`;
+ main.appendChild(screen);
+ const modal=document.createElement('div');modal.id='gModal';modal.className='modal';modal.innerHTML=`<div class="modalbox"><h2 id="gModalTitle">Agregar restaurante</h2><div class="grid" id="gFields">
+ <label>Ciudad<select id="gCity">${cities.map(c=>`<option>${c}</option>`).join('')}</select></label>
+ <label>Nombre del restaurante<input id="gName" maxlength="180" required></label>
+ <label>Dirección<input id="gAddress" maxlength="300"></label><label>Especialidad gastronómica<input id="gSpecialty" maxlength="180"></label>
+ <label>Plato recomendado<input id="gDish" maxlength="180"></label><label>Precio por persona<input id="gPrice" type="number" min="0" step="0.01"></label>
+ <label>Horario<input id="gHours" maxlength="180" placeholder="Ej. 12:00–22:00"></label><label>Enlace Google Maps<input id="gMaps" type="url" maxlength="1000" placeholder="https://maps.google.com/…"></label>
+ <label style="grid-column:1/-1">Observaciones<textarea id="gNotes" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;font:inherit"></textarea></label>
+ <label style="grid-column:1/-1;display:flex;align-items:center;gap:9px"><input id="gVisited" type="checkbox" style="width:auto"> Visitado</label>
+ </div><div class="modal-actions"><button class="light" id="gCancel">Cancelar</button><button class="primary" id="gSave">Guardar restaurante</button></div></div>`;
+ document.body.appendChild(modal);
+ const style=document.createElement('style');style.textContent=`#gastronomia .gastro-list{display:grid;gap:10px;margin-top:12px}#gastronomia .gastro-item{border:1px solid #dbe3ee;border-radius:12px;padding:13px;background:#f8fafc}#gastronomia .gastro-item h3{margin:0 0 6px;font-size:18px}#gastronomia .gastro-meta{font-size:14px;color:#475569;line-height:1.5}#gastronomia .gastro-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}#gastronomia .gastro-actions button{padding:8px 10px}#gastronomia .gastro-visited{color:#166534;font-weight:700}#gModal label{display:block;font-size:13px;font-weight:700}#gModal input:not([type=checkbox]),#gModal select{width:100%;box-sizing:border-box;padding:10px;margin-top:4px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}#gModal textarea{box-sizing:border-box;margin-top:4px}#gModal .grid{gap:12px}@media(max-width:650px){#gModal .grid{grid-template-columns:1fr}#gModal label[style*="grid-column"]{grid-column:auto!important}}`;
+ document.head.appendChild(style);
+ let records=[],editing=null;
+ const $=id=>document.getElementById(id);
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const msg=(t,err=false)=>{$('gStatus').textContent=t;$('gStatus').style.color=err?'#b91c1c':'#64748b'};
+ function render(){const q=$('gSearch').value.trim().toLocaleLowerCase('es');const shown=records.filter(r=>[r.ciudad,r.restaurante,r.especialidad,r.plato_recomendado,r.direccion].some(v=>String(v||'').toLocaleLowerCase('es').includes(q))).sort((a,b)=>cities.indexOf(a.ciudad)-cities.indexOf(b.ciudad)||a.restaurante.localeCompare(b.restaurante,'es'));
+  $('gRows').innerHTML=shown.length?shown.map(r=>`<article class="gastro-item"><h3>${esc(r.restaurante)} · ${esc(r.ciudad)}</h3><div class="gastro-meta">${r.especialidad?`<b>Especialidad:</b> ${esc(r.especialidad)}<br>`:''}${r.direccion?`<b>Dirección:</b> ${esc(r.direccion)}<br>`:''}${r.plato_recomendado?`<b>Plato recomendado:</b> ${esc(r.plato_recomendado)}<br>`:''}${r.precio_persona!==null&&r.precio_persona!==''?`<b>Precio/persona:</b> ${esc(r.precio_persona)}<br>`:''}${r.horario?`<b>Horario:</b> ${esc(r.horario)}<br>`:''}${r.observaciones?`<b>Notas:</b> ${esc(r.observaciones)}<br>`:''}<span class="${r.visitado?'gastro-visited':''}">${r.visitado?'✓ Visitado':'○ Pendiente'}</span></div><div class="gastro-actions">${r.google_maps?`<button class="light" data-action="map" data-id="${r.id}">📍 Google Maps</button>`:''}<button class="light" data-action="visit" data-id="${r.id}">${r.visitado?'Quitar Visitado':'✓ Marcar visitado'}</button><button class="edit" data-action="edit" data-id="${r.id}">✏️ Editar</button><button class="delete" data-action="delete" data-id="${r.id}">🗑️ Eliminar</button></div></article>`).join(''):'<div class="empty">No hay restaurantes que coincidan con la búsqueda.</div>';
+  msg(`${records.length} restaurantes registrados · ${records.filter(r=>r.visitado).length} visitados`);
+ }
+ async function load(){try{msg('Consultando restaurantes…');const {data,error}=await sb.from('gastronomia').select('*').order('ciudad').order('restaurante');if(error){msg('Error al cargar Gastronomía: '+error.message,true);return}records=data||[];render()}catch(e){msg('No se pudo consultar Gastronomía: '+(e?.message||e),true)}}
+ function openForm(r=null){editing=r?.id||null;$('gModalTitle').textContent=r?'Editar restaurante':'Agregar restaurante';$('gCity').value=r?.ciudad||cities[0];$('gName').value=r?.restaurante||'';$('gAddress').value=r?.direccion||'';$('gSpecialty').value=r?.especialidad||'';$('gDish').value=r?.plato_recomendado||'';$('gPrice').value=r?.precio_persona??'';$('gHours').value=r?.horario||'';$('gMaps').value=r?.google_maps||'';$('gNotes').value=r?.observaciones||'';$('gVisited').checked=!!r?.visitado;modal.classList.add('open')}
+ function close(){modal.classList.remove('open');editing=null}
+ async function save(){try{const name=$('gName').value.trim();if(!name){alert('Escribe el nombre del restaurante.');return}const user=(await sb.auth.getUser()).data.user;if(!user){alert('La sesión no está disponible.');return}const price=$('gPrice').value.trim();const payload={ciudad:$('gCity').value,restaurante:name,direccion:$('gAddress').value.trim()||null,especialidad:$('gSpecialty').value.trim()||null,plato_recomendado:$('gDish').value.trim()||null,precio_persona:price===''?null:Number(price),horario:$('gHours').value.trim()||null,google_maps:$('gMaps').value.trim()||null,observaciones:$('gNotes').value.trim()||null,visitado:$('gVisited').checked};let res;if(editing)res=await sb.from('gastronomia').update(payload).eq('id',editing).eq('user_id',user.id);else res=await sb.from('gastronomia').insert({...payload,user_id:user.id});if(res.error){alert('No se pudo guardar: '+res.error.message);return}close();await load()}catch(e){alert('Error al guardar: '+(e?.message||e))}}
+ async function action(e){try{const b=e.target.closest('button[data-action]');if(!b)return;const r=records.find(x=>String(x.id)===String(b.dataset.id));if(!r)return;const a=b.dataset.action;if(a==='map'){window.open(r.google_maps,'_blank','noopener,noreferrer');return}if(a==='edit'){openForm(r);return}if(a==='visit'){const {error}=await sb.from('gastronomia').update({visitado:!r.visitado}).eq('id',r.id).eq('user_id',r.user_id);if(error){alert('No se pudo actualizar Visitado: '+error.message);return}await load();return}if(a==='delete'&&confirm('¿Eliminar el restaurante «'+r.restaurante+'»?')){const {error}=await sb.from('gastronomia').delete().eq('id',r.id).eq('user_id',r.user_id);if(error){alert('No se pudo eliminar: '+error.message);return}await load()}}catch(e){alert('Error en la operación: '+(e?.message||e))}}
+ tab.onclick=async()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));tab.classList.add('active');document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));screen.classList.add('active');const {data,error}=await sb.auth.getSession();if(error||!data.session){msg('Inicia sesión para consultar Gastronomía.',true);return}await load()};
+ $('gAdd').onclick=()=>openForm();$('gSync').onclick=load;$('gSearch').addEventListener('input',render);$('gCancel').onclick=close;$('gSave').onclick=save;$('gRows').addEventListener('click',action);
+ // No interviene en initUser ni en los eventos de autenticación.
+})();
+
+</script></body></html>
